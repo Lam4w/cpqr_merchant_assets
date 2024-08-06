@@ -1,0 +1,66 @@
+import SwiftUI
+
+struct ScannerView: View {
+    var body: some View {
+        VStack(spacing: 8) {
+          Button{
+
+          } label: {
+            Image(systemName: "xmark")
+            .font(.title3)
+            .foregroundColor(.blue)
+          }
+          .frame(maxWidth: .infinity, alignment: .leading)
+
+          Text("Place the QR code inside the area")
+          .font(.title)
+          .foregroundColor(.black.opacity(0.8))
+          .padding(.top, 20)
+
+          Text("Scanning will start automatically")
+          .font(.callout)
+          .foregroundColor(.gray)
+
+          //Scanner
+
+          GeometryReader { 
+            let size = $0.size
+            ZStack{
+              RoundedRectangle(cornerRadius: 2, style: .circular)
+              //trimming
+              .trim(from: 0.61, to :0.64)
+              .stroke(Color("Blue"), style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
+            }
+
+            //square shape
+            .frame(width: size.width, height: size.width)
+            //centered
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+          }
+          .padding(.horizontal, 45)
+
+
+
+
+
+
+
+
+
+
+          Spacer(minLength: 15)
+
+          Button {
+
+          } label: {
+            Image(systemName: "qrcode.viewfinder")
+            .font(.largeTitle)
+            .foregroundColor(.gray)
+          }
+
+          Spacer(minLength: 45)
+
+        }
+        .padding(15)
+    }
+}

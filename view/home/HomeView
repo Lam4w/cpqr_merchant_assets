@@ -1,0 +1,57 @@
+import SwiftUI
+
+struct HomeView: View {
+    @StateObject var homeVM = HomeViewModel.shared
+    
+    var body: some View {
+        ZStack{
+            ScrollView{
+                Image("banner_top")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(height: 115)
+                    .padding(.horizontal, 20)
+
+                VStack{
+                    SearchTextField(placholder: "Search products", txt: $homeVM.txtSearch)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                }
+                .padding(.top, .topInsets )
+                
+                
+                SectionTitleAll(title: "All products", titleAll: "See All") {
+                    
+                }
+                .padding(.horizontal, 20)
+                
+                ScrollView {
+                    LazyVGrid(columns: columns,  spacing:15) {
+                        ForEach(homeVM.productArr, id: \.id) {
+                            pObj in
+                            ProductCell( pObj: pObj, width: .infinity ) {
+                                CartViewModel.serviceCallAddToCart(prodId: pObj.prodId, qty: 1) { isDone, msg in
+                                    
+                                    self.productArr.errorMessage = msg
+                                    self.productArr.showError = true
+                                }
+                            }
+                            
+                        }
+                    }
+                    .padding(.vertical, 10)
+                    .padding(.bottom, .bottomInsets + 60)
+                }
+            }
+        }
+        .ignoresSafeArea()
+    }
+}
+
+struct HomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        NavigationView {
+            HomeView()
+        }
+    }
+}

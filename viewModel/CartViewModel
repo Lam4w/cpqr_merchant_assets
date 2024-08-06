@@ -1,0 +1,156 @@
+import SwiftUI
+
+class CartViewModel: ObservableObject
+{
+    static var shared: CartViewModel = CartViewModel()
+    
+    
+    // @Published var showError = false
+    // @Published var showOrderAccept = false
+    // @Published var errorMessage = ""
+    
+    @Published var listArr: [CartItemModel] = []
+    @Published var total: String = "0.0"
+    
+    @Published var showCheckout: Bool = false
+    
+    // @Published var showPickerAddress: Bool = false
+    // @Published var showPickerPayment: Bool = false
+    // @Published var showPickerPromoCode: Bool = false
+    
+    // @Published var deliveryType: Int = 1
+    // @Published var paymentType: Int = 1
+    // @Published var deliverObj: AddressModel?
+    // @Published var paymentObj: PaymentModel?
+    // @Published var promoObj: PromoCodeModel?
+    
+    // @Published var deliverPriceAmount: String = ""
+    // @Published var discountAmount: String = ""
+    // @Published var userPayAmount: String = ""
+    
+    
+    init() {
+        serviceCallList()
+    }
+    
+    //MARK: ServiceCall
+    
+    func serviceCallList(){
+        ServiceCall.post(parameter: ["promo_code_id": promoObj?.id ?? "", "delivery_type": deliveryType ], path: Globs.SV_CART_LIST, isToken: true ) { responseObj in
+            if let response = responseObj as? NSDictionary {
+                if response.value(forKey: KKey.status) as? String ?? "" == "1" {
+                    
+                    self.total = response.value(forKey: "total") as? String ?? "0.0"
+                    self.discountAmount = response.value(forKey: "discount_amount") as? String ?? "0.0"
+                    self.deliverPriceAmount = response.value(forKey: "deliver_price_amount") as? String ?? "0.0"
+                    self.userPayAmount = response.value(forKey: "user_pay_price") as? String ?? "0.0"
+                    
+                  
+                    self.listArr = (response.value(forKey: KKey.payload) as? NSArray ?? []).map({ obj in
+                        return CartItemModel(dict: obj as? NSDictionary ?? [:])
+                    })
+                
+                }else{
+                    self.total = response.value(forKey: "total") as? String ?? "0.0"
+                    self.discountAmount = response.value(forKey: "discount_amount") as? String ?? "0.0"
+                    self.deliverPriceAmount = response.value(forKey: "deliver_price_amount") as? String ?? "0.0"
+                    self.userPayAmount = response.value(forKey: "user_pay_price") as? String ?? "0.0"
+                    
+                    self.errorMessage = response.value(forKey: KKey.message) as? String ?? "Fail"
+                    self.showError = true
+                }
+            }
+        } failure: { error in
+            self.errorMessage = error?.localizedDescription ?? "Fail"
+            self.showError = true
+        }
+    }
+    
+    func serviceCallUpdateQty(cObj: CartItemModel, newQty: Int ){
+        
+    }
+
+    func updateQty(cObj: CartItemModel, newQty: Int){
+      guard var cartItemList = self.listArr.value else {
+          return
+      }
+
+      if let index = cartItemList.firstIndex(where: { $0.product.id == cartItem.product.id }) {
+          //paste the old item here
+          let updatedItem = CartItem(product: cartItem.product, quantity: quantity)
+          cartItemList[index] = updatedItem
+          mutableCart.value = cartItemList
+          calculateCartTotal()
+      }
+    }
+    
+
+    //need to check in dcitionary -> fix code
+    func removeItem(cObj: CartItemModel) {
+
+        guard let currentCart = self.listArr.value else {
+            return
+        }
+
+        var cartItemList = currentCart
+        if let index = cartItemList.firstIndex(where: { $0.product.id == cartItem.product.id }) {
+            cartItemList.remove(at: index)
+            self.listArr.value = cartItemList
+            calculateCartTotal()
+        }
+    }
+    
+    func serviceCallOrderPlace(){
+        
+    }
+    
+    class func serviceCallAddToCart(prodId: Int, qty: Int, didDone: ((_ isDone: Bool,_ message: String  )->())? ) {
+        ServiceCall.post(parameter: ["prod_id":  prodId, "qty": qty], path: Globs.SV_ADD_CART, isToken: true ) { responseObj in
+            if let response = responseObj as? NSDictionary {
+                if response.value(forKey: KKey.status) as? String ?? "" == "1" {
+                    didDone?(true, response.value(forKey: KKey.message) as? String ?? "Done" )
+                }else{
+                    didDone?(false, response.value(forKey: KKey.message) as? String ?? "Fail" )
+                }
+            }
+        } failure: { error in
+            didDone?(false,  error?.localizedDescription ?? "Fail" )
+        }
+    }
+
+    private func calculateCartTotal() {
+        guard let cartItemList = mutableCart.value else {
+            return
+        }
+
+        var total: Double = 0.0
+        for cartItem in cartItemList {
+            total += cartItem.product.price * Double(cartItem.quantity)
+        }
+
+        mutableTotalPrice.value = total
+    }
+
+    class func addItemToCart(product: ProductModel, qty: Int) {
+        for cartItem in self.listArr {
+            if cartItem.id == product.id {
+                if cartItem.quantity == 5 {
+                    return false
+                }
+
+                if let index = self.listArr.firstIndex(where: { $0.product.id == cartItem.product.id }) {
+                    cartItemList[index].quantity += 1
+                    mutableCart.value = cartItemList
+                    calculateCartTotal()
+                    return true
+                }
+            }
+        }
+
+        let cartItem = CartItem(product: product, quantity: 1)
+        cartItemList.append(cartItem)
+        mutableCart.value = cartItemList
+        calculateCartTotal()
+        return true
+    }
+}

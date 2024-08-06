@@ -1,0 +1,37 @@
+import SwiftUI
+
+struct CartItemModel:  Identifiable, Equatable {
+    var id: UUID = UUID()
+    var prodId: Int = 0
+    var orderId: Int = 0
+    var qty: Int = 0
+    var detail: String = ""
+    var name: String = ""
+    var unitName: String = ""
+    var unitValue: String = ""
+    var image: String = ""
+    var price: Double = 0
+    var itemPrice: Double?
+    var totalPrice: Double?
+    
+
+    init(dict: NSDictionary) {
+        
+        self.userId = dict.value(forKey: "user_id") as? Int ?? 0
+        self.qty = dict.value(forKey: "qty") as? Int ?? 0
+        self.prodId = dict.value(forKey: "prod_id") as? Int ?? 0
+        
+        self.detail = dict.value(forKey: "detail") as? String ?? ""
+        self.name = dict.value(forKey: "name") as? String ?? ""
+        self.unitName = dict.value(forKey: "unit_name") as? String ?? ""
+        self.unitValue = dict.value(forKey: "unit_value") as? String ?? ""
+        self.image = dict.value(forKey: "image") as? String ?? ""
+        self.itemPrice = dict.value(forKey: "item_price") as? Double
+        self.totalPrice = dict.value(forKey: "total_price") as? Double
+        self.price = dict.value(forKey: "price") as? Double ?? 0
+    }
+    
+    static func == (lhs: CartItemModel, rhs: CartItemModel) -> Bool {
+        return lhs.id == rhs.id
+    }
+}
