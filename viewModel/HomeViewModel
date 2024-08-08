@@ -19,9 +19,8 @@ class HomeViewModel: ObservableObject
         //api fetching emulator
         var resPayload = []
 
-          self.productArr = (resPayload as? NSArray ?? []).map({ obj in
-              
-              return ProductModel(dict: obj as? NSDictionary ?? [:])
-          })
+        self.productArr = (resPayload as? NSArray ?? []).map({ obj in
+            return ProductModel(dict: obj as? NSDictionary ?? [:])
+        })
     }  
 }
