@@ -1,0 +1,43 @@
+ "payment": {
+ "pro_code": "000000",
+ "trans_amount": "000000700000",
+ "transmis_date_time": "0506143037",
+ "system_trace_no": "123456",
+ "time_local_trans": "103815",
+ "date_local_trans": "0701",
+ "retrieval_refer_no": "120010123456",
+ "trans_currency_code": "704",
+ "additional_private": "FD",
+ "service_code": "Transit_PC",
+ "self_defined": "21"
+ },
+ "device": {
+ "point_service_entry_code": "079",
+ "point_service_con_code": "00",
+ "card_acpt_terminal_code": "06450645",
+ "card_acpt_iden_code": "VINBUS NODE1234",
+"card_acpt_name_location": "BREATH Bank BNV 7041111 HaNoiLyThuong 704"
+ }
+},
+"requestor":{
+ "id": "123456789012",
+ "name": "VIN BUS"
+ }
+
+ ServiceCall.post(parameter: [:], path: Globs.SV_FAVORITE_LIST, isToken: true ) { responseObj in
+     if let response = responseObj as? NSDictionary {
+         if response.value(forKey: KKey.status) as? String ?? "" == "1" {
+             
+             self.listArr = (response.value(forKey: KKey.payload) as? NSArray ?? []).map({ obj in
+                 return ProductModel(dict: obj as? NSDictionary ?? [:])
+             })
+         
+         }else{
+             self.errorMessage = response.value(forKey: KKey.message) as? String ?? "Fail"
+             self.showError = true
+         }
+     }
+ } failure: { error in
+     self.errorMessage = error?.localizedDescription ?? "Fail"
+     self.showError = true
+ }
