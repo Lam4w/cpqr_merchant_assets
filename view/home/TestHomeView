@@ -351,6 +351,7 @@ struct Row2 : View {
             Spacer(minLength: 15)
             
             Button(action: {
+              
                 
             }) {
                 

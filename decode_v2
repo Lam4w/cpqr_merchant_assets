@@ -1,0 +1,410 @@
+package com.example.demo.bizlogic;
+
+import com.example.demo.utils.BerTlv;
+import org.apache.commons.codec.DecoderException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.client.RestTemplate;
+import com.example.demo.models.*;
+
+import com.google.gson.Gson;
+import com.nimbusds.jose.JWSObject;
+import org.apache.commons.codec.binary.Base64;
+
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.apache.commons.codec.DecoderException;
+import org.apache.commons.codec.binary.Hex;
+
+public class PurchaseProcessing {
+//    AppConfiguration appCon = TpgApplication.appContext.getBean(AppConfiguration.class);
+//    KeyConfiguration keyCon = TpgApplication.appContext.getBean(KeyConfiguration.class);
+    private final static Logger logger = LoggerFactory.getLogger(PurchaseProcessing.class);
+    private static Set<String> specialtags= Arrays.stream(new String[]{/*"91","71","72"*/}).collect(Collectors.toSet());;
+
+    PurchaseResponse pcRes = new PurchaseResponse();
+//    TabProcessingPayload payload = new TabProcessingPayload();
+//    TabProcessingCardInfo cpi = new TabProcessingCardInfo();
+//    Requestor requestor = new Requestor();
+    RestTemplate template = new RestTemplate();
+    ResultInfo RS = new ResultInfo();
+    String strSignature = "";
+    String strResultMessage = "";
+
+    public PurchaseResponse Processing(PurchaseRequest puReq) {
+        String bodyJSON = new Gson().toJson(puReq);
+        logger.debug("TapProcessing Device Start Veify ! ");
+        logger.debug("TapProcessing Device body JSON: " + bodyJSON);
+
+        return pcRes;
+    }
+
+    //B1 Coding of the Tag Field of BER-TLV Data Objects
+    public static void parseBERTLVTag(String tlv) throws DecoderException
+    {
+        //verify tlv string
+        if(tlv == null || "".equalsIgnoreCase(tlv) || tlv.length()%2!=0) return;
+
+        //todo: StringIndexOutOfBoundsException handling
+        //todo: parsing special tags 71 || 72 || 91
+
+        System.out.println("============= START ["+tlv+"]==================");
+
+        //tag reading flag
+        boolean inTagRead = true;
+        Map<String,String> tags = new HashMap<>();
+
+        StringBuilder _tmp = new StringBuilder();
+
+        //current tag
+        String lastTag = null;
+
+        //current tlv string index
+        int old_index = 0;
+
+        //first byte flag when parsing tag field & length field
+        boolean isFirstTagByte = true;
+
+        //continue flag, more == false ?? stop parsing
+        boolean more = true;
+
+        //parsing loop
+        while (more) {
+            //current substring
+            String hByte = tlv.substring(old_index,(old_index = old_index+2));
+
+            //while parsing tag field
+            if(inTagRead) {
+                //check whether tag field is 1 or 2 bytes
+                if(isLastTagByte(hByte, isFirstTagByte)) {
+                    //if got the tag field then stop parsing tag field
+                    inTagRead=false;
+                    _tmp.append(hByte);
+
+                    //update current tag
+                    lastTag =  _tmp.toString();
+                    System.out.println("Tag["+lastTag+"]");
+                    tags.put(lastTag, null);
+                    _tmp= new StringBuilder();
+                } else {
+                    //append current tlv substring to temp tag
+                    _tmp.append(hByte);
+                }
+                isFirstTagByte = false;
+            } else //end of tag parsing, start parsing length and value
+            {
+                isFirstTagByte = true;
+                //check if tag is 71 || 72 || 91
+                if(!isSpecialTag(lastTag)) {
+                    //check whether length field is one or two bytes
+                    if(isLastLengthByte(hByte)) {
+                        inTagRead=true;
+                        _tmp.append(hByte);
+                        //parse length * 2
+                        int len =  Integer.parseInt(_tmp.toString(), 16 );
+
+                        System.out.println(" Length ["+len+"]");
+                        //parse the data
+                        //start: oldIndex
+                        //end: oldIndex + length * 2 (bytes -> chars)
+                        String data =  tlv.substring(old_index, (old_index = old_index+len*2));
+                        String tmpData= lastTag+":"+_tmp.toString() + ":h" + data;
+                        System.out.println(" Data ["+tmpData+"]");
+                        _tmp = new StringBuilder();
+
+                        tags.put(lastTag, tmpData);
+                    }else
+                    {
+                        _tmp.append(hByte);
+                    }
+                } else { //Special tag not TLV format
+                    int len = 10;
+                    String data =  "";
+                    //tlv.substring(old_index, (old_index = old_index+len*2));
+                    String tmpData= lastTag+":0A:h"+data;
+                    System.out.println(" Data ["+tmpData+"]");
+                    _tmp = new StringBuilder();
+
+                    tags.put(lastTag, tmpData);
+                }
+            }
+            more = tlv.length() <= old_index ? false : true;
+//   if(tlv.length()<=old_index) more=false;
+
+        }//END OF WHILE
+        System.out.println("------------  as MAP  ---------------------");
+        tags.forEach((x,y)->{
+            System.out.println("Tag["+x+"] Value["+y+"]");
+        });
+        System.out.println("===============================");
+    }
+
+//    public BerTlvs parse(byte[] aBuf, final int aOffset, int aLen) {
+//        List<BerTlv> tlvs = new ArrayList<BerTlv>();
+//        if(aLen==0) return new BerTlvs(tlvs);
+//
+//        int offset = aOffset;
+//        for(int i=0; i<100; i++) {
+//            ParseResult result =  parseWithResult(0, aBuf, offset, aLen-offset);
+//            tlvs.add(result.tlv);
+//
+//            if(result.offset>=aOffset+aLen) {
+//                break;
+//            }
+//
+//            offset = result.offset;
+//
+//        }
+//
+//        return new BerTlvs(tlvs);
+//    }
+
+    //fe -> request -> api
+    //server -> nhaajn request -> ddaayr sang server khac
+
+    public List<BerTlv> parseTransactions(String tlv, int startIndex, List<BerTlv> list) throws DecoderException {
+        //verify tlv string
+        //todo: StringIndexOutOfBoundsException handling
+        //todo: parsing special tags 71 || 72 || 91
+        if(tlv == null || "".equalsIgnoreCase(tlv) || tlv.length()%2!=0) { return list; };
+
+        // Tags can be either two or four characters in length (aka one or two bytes).
+        Map<String, String> tags = new HashMap<>();
+
+        //class BerTLV stores tag, value or list<BerTLV>
+        //class BerTLVs stores list<BerTLV>
+
+        //declare global var: List<BerTlv> tlvs = new ArrayList<BerTlv>();
+        //end of each loop: tlvs.add(result.tlv);
+        //if constructed: new BerTlv(tag, list);
+        //if primitive: new BerTlv(tag, value);
+        //end of function return new BerTlvs(tlvs);
+
+        int constructedIndex = 0;
+        boolean isContructed = false;
+
+        //temp var
+        StringBuilder _tmp = new StringBuilder();
+
+        //current tag
+        String lastTag = null;
+        //current byte flag
+        boolean isFirstTagByte = true;  
+        //parsing tag flag
+        boolean parsing = true;
+        //current tlv substring index
+        int currIndex = startIndex;
+
+        //current tlv substring
+        String hByte = "";
+
+        //start of tag parsing loop
+        while (parsing) {
+            //append next byte to the current substring
+            hByte = tlv.substring(currIndex,(currIndex = currIndex+2));
+            //check whether the current substring is the last tag byte
+            if (isLastTagByte(hByte, isFirstTagByte)) {
+                //append
+                _tmp.append(hByte);
+                lastTag = _tmp.toString();
+                System.out.println("Tag[" + lastTag + "]");
+                tags.put(lastTag, null);
+                parsing = false;
+                _tmp = new StringBuilder();
+            } else {
+                //append current substring to temp var
+                _tmp.append(hByte);
+            }
+        }
+        //end of tag field parsing
+
+        parsing = true;
+        
+        //start of length field & value field parsing
+        //check whether the current tag is a special tag or not (71 || 72 || 91)
+        while (parsing) {
+            hByte = tlv.substring(currIndex,(currIndex = currIndex+2));
+            if (!isSpecialTag(lastTag)) {
+                if (isLastLengthByte(hByte)) {
+                    _tmp.append(hByte);
+                    int len = Integer.parseInt(_tmp.toString(), 16);
+                    System.out.println(" Length [" + len + "]");
+
+                    //check if value field is constructed data
+                    if (isConstructedData(lastTag)) {
+                        isContructed = true;
+                        constructedIndex = currIndex;
+                    }
+
+                    String data =  tlv.substring(currIndex, (currIndex = currIndex+len*2));
+                    String tmpData = lastTag + ":" + _tmp.toString() + ":h" + data;
+                    System.out.println(" Data [" + tmpData + "]");
+                    _tmp = new StringBuilder();
+
+                    tags.put(lastTag, tmpData);
+
+                    parsing = false;
+                } else {
+                    _tmp.append(hByte);
+                }
+            } else { //Special tag not TLV format
+                int len = 10;
+                String data = "";
+                //tlv.substring(old_index, (old_index = old_index+len*2));
+                String tmpData = lastTag + ":0A:h" + data;
+                System.out.println(" Data [" + tmpData + "]");
+                _tmp = new StringBuilder();
+
+                tags.put(lastTag, tmpData);
+            }
+        }
+
+        tags.forEach((x, y) -> {
+            System.out.println("Tag[" + x + "] Value[" + y + "]");
+        });
+
+        if (isContructed) {
+            //new list
+            List<BerTlv> subList = new ArrayList<BerTlv>();
+            parseTransactions(tlv, constructedIndex, subList);
+            //new BerTlV(tag, list);
+            //list.add(...);
+        } else {
+            //new BerTLV(tag, value);
+            //list.add(...)
+            if (currIndex != tlv.length()) {
+                parseTransactions(tlv, currIndex, list);
+            }
+        }
+
+        return list;
+    }
+
+    //check whether tag field is one or two bytes long
+    public static boolean isLastTagByte(String onehexByte, boolean firstByte) throws DecoderException
+    {
+        byte tagByte = Hex.decodeHex(onehexByte.toCharArray())[0];
+
+        if(firstByte && (tagByte & 0x1f) == 0x1f) {
+            return false;
+        } else if (!firstByte && (tagByte & 0x80) == 0x80) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    //check whether length field is one or two bytes
+    public static boolean isLastLengthByte(String onehexByte) {
+        String binVal = new BigInteger(onehexByte, 16).toString(2);
+        binVal = fillChars(false, binVal, 8, "0");
+        if (binVal.startsWith("0")) return true;
+
+        return true;
+    }
+
+    //check whether the data object is constructed or not
+    public static boolean isConstructedData(String hexByte) {
+        String firstByte = hexByte.substring(0,2);
+        String binVal = new BigInteger(firstByte, 16).toString(2);
+        binVal = fillChars(false, binVal, 8, "0");
+        return Character.toString(binVal.charAt(2)).equals("1");
+    }
+
+    public static String fillChars(String fillChar,int times)
+    {
+        StringBuffer builder=new StringBuffer();
+        if(fillChar==null)
+            return "";
+        for (int i = 0; i < times; i++)
+        {
+            builder.append(fillChar);
+        }
+
+        return builder.toString();
+    }
+
+    public static String fillChars(boolean isLeftJustified, String data, int length, String fillChar)
+    {
+        StringBuffer ret = new StringBuffer();
+        String fill=null;
+        if(data!=null && !data.equalsIgnoreCase(""))
+        {
+            int datLength=data.length();
+            int diff=-1;
+            if(datLength<length)
+            {
+                diff=length-datLength;
+                fill=fillChars(fillChar, diff);
+
+                if(isLeftJustified)
+                {
+                    ret.append(data);
+                    ret.append(fill);
+                }else
+                {
+                    ret.append(fill);
+                    ret.append(data);
+                }
+            }else if(datLength==length)
+            {
+                ret.append(data);
+            }
+        }else
+        {
+            ret.append(fillChars(fillChar, length));
+        }
+        return ret.toString();
+    }
+
+    private static boolean isSpecialTag(String tagName)
+    {
+        return specialtags.contains(tagName);
+    }
+
+//    public static void TLVParser(String tlv) {
+//        if (tlv == null || tlv.length()%2!=0) {
+//            throw new RuntimeException("Invalid tlv, null or odd length");
+//        }
+//
+//        HashMap<String, String> hashMap = new HashMap<String, String>();
+//        for (int i=0; i<tlv.length();) {
+//            try {
+//                String key = tlv.substring(i, i=i+2);
+//
+//                if ((Integer.parseInt(key,16) & 0x1F) == 0x1F) {
+//                    // extra byte for TAG field
+//                    key += tlv.substring(i, i=i+2);
+//                }
+//                String len = tlv.substring(i, i=i+2);
+//                int length = Integer.parseInt(len,16);
+//
+//                if (length > 127) {
+//                    // more than 1 byte for lenth
+//                    int bytesLength = length-128;
+//                    len = tlv.substring(i, i=i+(bytesLength*2));
+//                    length = Integer.parseInt(len,16);
+//                }
+//                length*=2;
+//
+//                String value = tlv.substring(i, i=i+length);
+//                //System.out.println(key+" = "+value);
+//                hashMap.put(key, value);
+//            } catch (NumberFormatException e) {
+//                throw new RuntimeException("Error parsing number",e);
+//            } catch (IndexOutOfBoundsException e) {
+//                throw new RuntimeException("Error processing field",e);
+//            }
+//        }
+//
+//        System.out.println(hashMap);
+//    }
+
+}
