@@ -311,25 +311,26 @@ if let decodedEMV = decoder.decode(inputString) {
 func createTransactions(from decodedData: [String: Any]) -> [Transaction] {
     var transactions: [Transaction] = []
 
-    // Helper function to handle nested decoding recursively
+    // Recursive function to process the decoded data
     func processDecodedData(_ data: Any, parentTag: String = "") {
         if let nestedData = data as? [String: Any] {
             for (tag, value) in nestedData {
-                // Create a new Transaction for nested data and add to the list
-                if let valueString = value as? String {
-                    transactions.append(Transaction(tag: tag, value: valueString))
-                } else {
-                    // Recursively process nested data if it's another dictionary
-                    processDecodedData(value, parentTag: tag)
+                // Check if the value is a dictionary, which means it's constructed data
+                if let nestedDict = value as? [String: Any] {
+                    // Process nested dictionary data recursively
+                    processDecodedData(nestedDict, parentTag: tag)
+                } else if let nestedString = value as? String {
+                    // Add the tag and its corresponding value as a transaction
+                    transactions.append(Transaction(tag: tag, value: nestedString))
                 }
             }
         } else if let overallValue = data as? String, !parentTag.isEmpty {
-            // Add the overall value of constructed data if it exists
+            // If it's a string value with a parent tag, it's a constructed overall value
             transactions.append(Transaction(tag: parentTag, value: overallValue))
         }
     }
 
-    // Process the top-level decoded data
+    // Start processing the decoded data from the top level
     processDecodedData(decodedData)
 
     return transactions
