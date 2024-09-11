@@ -308,3 +308,29 @@ if let decodedEMV = decoder.decode(inputString) {
     print(decodedEMV)
 }
 
+func createTransactions(from decodedData: [String: Any]) -> [Transaction] {
+    var transactions: [Transaction] = []
+
+    // Helper function to handle nested decoding recursively
+    func processDecodedData(_ data: Any, parentTag: String = "") {
+        if let nestedData = data as? [String: Any] {
+            for (tag, value) in nestedData {
+                // Create a new Transaction for nested data and add to the list
+                if let valueString = value as? String {
+                    transactions.append(Transaction(tag: tag, value: valueString))
+                } else {
+                    // Recursively process nested data if it's another dictionary
+                    processDecodedData(value, parentTag: tag)
+                }
+            }
+        } else if let overallValue = data as? String, !parentTag.isEmpty {
+            // Add the overall value of constructed data if it exists
+            transactions.append(Transaction(tag: parentTag, value: overallValue))
+        }
+    }
+
+    // Process the top-level decoded data
+    processDecodedData(decodedData)
+
+    return transactions
+}
