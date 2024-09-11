@@ -200,3 +200,26 @@ func printDecodedTLV(_ dictionary: [String: Any], indent: String = "") {
         }
     }
 }
+
+func createTransactions(from dictionary: [String: Any]) -> [Transaction] {
+    var transactions: [Transaction] = []
+
+    // Helper function to process each key-value pair and add to transactions list
+    func processDictionary(_ dict: [String: Any]) {
+        for (tag, value) in dict {
+            if let nestedDict = value as? [String: Any] {
+                // Recursively process nested dictionaries
+                processDictionary(nestedDict)
+            } else if let stringValue = value as? String {
+                // Create a Transaction object and add it to the list
+                let transaction = Transaction(tag: tag, value: stringValue)
+                transactions.append(transaction)
+            }
+        }
+    }
+
+    // Start processing the main dictionary
+    processDictionary(dictionary)
+
+    return transactions
+}
