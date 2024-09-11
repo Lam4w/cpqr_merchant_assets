@@ -315,18 +315,24 @@ func createTransactions(from decodedData: [String: Any]) -> [Transaction] {
     func processDecodedData(_ data: Any, parentTag: String = "") {
         if let nestedData = data as? [String: Any] {
             for (tag, value) in nestedData {
-                // Check if the value is a dictionary, which means it's constructed data
-                if let nestedDict = value as? [String: Any] {
-                    // Process nested dictionary data recursively
-                    processDecodedData(nestedDict, parentTag: tag)
-                } else if let nestedString = value as? String {
-                    // Add the tag and its corresponding value as a transaction
-                    transactions.append(Transaction(tag: tag, value: nestedString))
+                if isConstructedTag(tag) {
+                    // If the tag is constructed, process its nested data
+                    if let nestedDict = value as? [String: Any] {
+                        if let nestedValues = nestedDict["nested"] {
+                            processDecodedData(nestedValues, parentTag: tag)
+                        }
+                        // Add the overall value of the constructed data
+                        if let overallValue = nestedDict["overallValue"] as? String {
+                            transactions.append(Transaction(tag: tag, value: overallValue))
+                        }
+                    }
+                } else {
+                    // Add the tag and its value if it's not constructed
+                    if let stringValue = value as? String {
+                        transactions.append(Transaction(tag: tag, value: stringValue))
+                    }
                 }
             }
-        } else if let overallValue = data as? String, !parentTag.isEmpty {
-            // If it's a string value with a parent tag, it's a constructed overall value
-            transactions.append(Transaction(tag: parentTag, value: overallValue))
         }
     }
 
