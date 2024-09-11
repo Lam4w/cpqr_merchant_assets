@@ -187,3 +187,16 @@ let decodedEMV: [String: Any] = [
 let checkResult = checkMandatoryTags(in: decodedEMV, mandatoryTags: mandatoryTags)
 print(checkResult)
 
+func printDecodedTLV(_ dictionary: [String: Any], indent: String = "") {
+    for (tag, value) in dictionary {
+        if let nestedDict = value as? [String: Any] {
+            // If the value is a nested dictionary, print the tag and recursively print its contents
+            print("\(indent)\(tag): {")
+            printDecodedTLV(nestedDict, indent: indent + "  ")
+            print("\(indent)}")
+        } else {
+            // If the value is a simple string, print the tag and its value
+            print("\(indent)\(tag): \(value)")
+        }
+    }
+}
