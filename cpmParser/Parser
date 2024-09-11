@@ -223,3 +223,88 @@ func createTransactions(from dictionary: [String: Any]) -> [Transaction] {
 
     return transactions
 }
+
+import CryptoTokenKit
+
+class EMVDecoder {
+    private let allowedTags: [String]
+    
+    // Initialize the decoder with a list of allowed tags
+    init(allowedTags: [String]) {
+        self.allowedTags = allowedTags
+    }
+    
+    // Decode function that checks tags against the allowed tags list
+    func decode(_ inputTLV: String) -> [String: Any]? {
+        var result: [String: Any] = [:]
+        
+        guard let records = TKBERTLVRecord.sequenceOfRecords(from: hexStringToData(inputTLV)) else {
+            print("Failed to parse TLV records.")
+            return nil
+        }
+        
+        for record in records {
+            let hexTag = String(record.tag, radix: 16).uppercased()
+            let fullTag = "0x\(hexTag)"
+            
+            // Check if the current tag exists in the allowed tags list
+            if allowedTags.contains(fullTag) {
+                // Continue decoding if the tag is allowed
+                result[fullTag] = decodeValue(record.value)
+            } else {
+                // Stop decoding if the tag is not allowed
+                print("Decoding stopped: Tag \(fullTag) is not allowed.")
+                return nil
+            }
+        }
+        return result
+    }
+    
+    // Helper function to decode nested values if they are constructed data
+    private func decodeValue(_ data: Data) -> Any {
+        if let nestedRecords = TKBERTLVRecord.sequenceOfRecords(from: data) {
+            var nestedResult: [String: Any] = [:]
+            for nestedRecord in nestedRecords {
+                let nestedTag = String(nestedRecord.tag, radix: 16).uppercased()
+                nestedResult["0x\(nestedTag)"] = hexEncodedString(from: nestedRecord.value)
+            }
+            return nestedResult
+        } else {
+            return hexEncodedString(from: data)
+        }
+    }
+    
+    // Converts Data to a hex string representation
+    private func hexEncodedString(from data: Data) -> String {
+        return data.map { String(format: "%02X", $0) }.joined()
+    }
+    
+    // Converts a hex string to Data
+    private func hexStringToData(_ hexString: String) -> Data {
+        let cleanedString = hexString.replacingOccurrences(of: " ", with: "")
+        var data = Data(capacity: cleanedString.count / 2)
+        
+        var index = cleanedString.startIndex
+        while index < cleanedString.endIndex {
+            let nextIndex = cleanedString.index(index, offsetBy: 2)
+            let byteString = cleanedString[index..<nextIndex]
+            if var byte = UInt8(byteString, radix: 16) {
+                data.append(&byte, count: 1)
+            }
+            index = nextIndex
+        }
+        
+        return data
+    }
+}
+
+// Example usage:
+let allowedTags = ["0x5F20", "0x4F", "0x9F1E", "0x57", "0x9F4E", "0x42"]
+let decoder = EMVDecoder(allowedTags: allowedTags)
+
+let inputString = "5F201A54444320424C41434B20554E4C494D49544544205649534120204F07A00000000310105F24032307319F160F4243544553542031323334353637389F21031826509A031406179F02060000000000019F03060000000000009F34030203009F120C56495341204352454449544F9F0607A00000000310105F300202019F4E0F616263640000000000000000000000C408491573FFFFFF1097C00A09117101800165E0000AC2820168D9DE289AAD770BE408F6B1D4E0A2576CEA7F03CD479CE3A1827375D6C4D4959ACDB5D3B6F84CD83430F4346C35E48A77A0D5F36FBEA444C2D8701C07FFC7AF06C0485D68F7A83FC30840D3C0766EC4EE669BE5A42BAD4C7459680FAAAE9C4EFEFFEB5A590E53B3E91B3CD28A415C2C9484E26DA5A15592BBCD1F45CF49D27A9D480B031957DF8C790C55FF60DB192CCD070FA4F7BCDC99E7F7567C2F991B5536F9336BA66D68115D54BC3642A9CA47FDD162FCDC33E455AAC283975DACC98CBE9A6611E996F0740072CF8E32D3D9F39F4BB25568F5CC3E7F5DE158E4D62BF4E7185CF13BD068C4F062C26A3BBF88E056F249130E89AA29E52A1EBB6BAD98296822F10949F0C825D1449DA7EF4431AB846D0DDB916F2901359DD9A3B3395BAC9F9BE4D24657F65B030DDADA53577A14D9F5F776B6FF7EAB99D8C4BB08BEF2016C72D94B1DB91BCF0238405B7857646DCE5F79871D96B6A6652090FD8CFCC59973433919A6D0533DFE"
+
+if let decodedEMV = decoder.decode(inputString) {
+    print(decodedEMV)
+}
+
