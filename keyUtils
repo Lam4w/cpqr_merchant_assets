@@ -1,0 +1,127 @@
+import Foundation
+import Security
+import CryptoKit
+import JOSESwift
+
+func readPrivateKey(from path: String) throws -> SecKey? {
+    let url = URL(fileURLWithPath: path)
+    let keyData = try Data(contentsOf: url)
+    guard var keyString = String(data: keyData, encoding: .utf8) else {
+        throw NSError(domain: "Invalid file encoding", code: -1, userInfo: nil)
+    }
+    
+    // Remove PEM headers and newlines
+    keyString = keyString
+        .replacingOccurrences(of: "-----BEGIN PRIVATE KEY-----", with: "")
+        .replacingOccurrences(of: "-----END PRIVATE KEY-----", with: "")
+        .replacingOccurrences(of: "\n", with: "")
+    
+    guard let decodedData = Data(base64Encoded: keyString) else {
+        throw NSError(domain: "Base64 decoding failed", code: -2, userInfo: nil)
+    }
+    
+    // Define attributes for the key
+    let attributes: [String: Any] = [
+        kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+        kSecAttrKeyClass as String: kSecAttrKeyClassPrivate,
+        kSecAttrKeySizeInBits as String: 2048
+    ]
+    
+    // Create the key using the Security framework
+    var error: Unmanaged<CFError>?
+    guard let privateKey = SecKeyCreateWithData(decodedData as CFData, attributes as CFDictionary, &error) else {
+        throw error!.takeRetainedValue() as Error
+    }
+    
+    return privateKey
+}
+
+func readPublicKey(from path: String) throws -> SecKey? {
+    let url = URL(fileURLWithPath: path)
+    let keyData = try Data(contentsOf: url)
+    guard var keyString = String(data: keyData, encoding: .utf8) else {
+        throw NSError(domain: "Invalid file encoding", code: -1, userInfo: nil)
+    }
+    
+    // Remove PEM headers and newlines
+    keyString = keyString
+        .replacingOccurrences(of: "-----BEGIN PUBLIC KEY-----", with: "")
+        .replacingOccurrences(of: "-----END PUBLIC KEY-----", with: "")
+        .replacingOccurrences(of: "\n", with: "")
+    
+    guard let decodedData = Data(base64Encoded: keyString) else {
+        throw NSError(domain: "Base64 decoding failed", code: -2, userInfo: nil)
+    }
+    
+    // Define attributes for the key
+    let attributes: [String: Any] = [
+        kSecAttrKeyType as String: kSecAttrKeyTypeRSA,
+        kSecAttrKeyClass as String: kSecAttrKeyClassPublic,
+        kSecAttrKeySizeInBits as String: 2048
+    ]
+    
+    // Create the key using the Security framework
+    var error: Unmanaged<CFError>?
+    guard let publicKey = SecKeyCreateWithData(decodedData as CFData, attributes as CFDictionary, &error) else {
+        throw error!.takeRetainedValue() as Error
+    }
+    
+    return publicKey
+}
+
+func encryptJWE(originalData: String, publicKey: SecKey) -> String? {
+    do {
+        // Generate a Content Encryption Key (CEK) for AES encryption
+        let cek = SymmetricKey(size: .bits256)
+        let cekData = cek.withUnsafeBytes { Data(Array($0)) }
+        
+        // Set up JWE Header with the appropriate algorithm and encryption method
+        let header = JWEHeader(algorithm: .RSAOAEP256, encryptionAlgorithm: .A256CBCHS512)
+        
+        // Convert the original data to Data format
+        guard let payloadData = originalData.data(using: .utf8) else {
+            throw NSError(domain: "Invalid UTF-8 data", code: -1, userInfo: nil)
+        }
+        
+        // Create a JWE object with the header and payload
+        let payload = Payload(data: payloadData)
+        var jweEncrypt = JWE(header: header, payload: payload)
+        
+        // Encrypt the payload with the RSA public key and the generated CEK
+        let encrypter = RSAEncrypter(publicKey: publicKey, contentEncryptionKey: cekData, algorithm: .RSAOAEP256)
+        try jweEncrypt.encrypt(using: encrypter)
+        
+        // Serialize the JWE object to a compact string representation
+        return jweEncrypt.compactSerializedString
+    } catch {
+        print("Encryption failed: \(error)")
+        return nil
+    }
+}
+
+func signerJWS(strData: String, privateKey: SecKey, keyID: String) -> String? {
+    do {
+        // Set up JWS Header with the RS512 algorithm and key ID
+        let header = JWSHeader(algorithm: .RS512)
+        header.kid = keyID
+        
+        // Convert the data to Data format
+        guard let payloadData = strData.data(using: .utf8) else {
+            throw NSError(domain: "Invalid UTF-8 data", code: -1, userInfo: nil)
+        }
+        
+        // Create a JWS object with the header and payload
+        let payload = Payload(payloadData)
+        var jwsObject = JWS(header: header, payload: payload)
+        
+        // Sign the JWS using the private key
+        let signer = RSASigner(algorithm: .RS512, privateKey: privateKey)
+        try jwsObject.sign(using: signer)
+        
+        // Serialize the JWS object to a compact string representation
+        return jwsObject.compactSerializedString
+    } catch {
+        print("Signing failed: \(error)")
+        return nil
+    }
+}
