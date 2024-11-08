@@ -56,7 +56,7 @@ struct Device: Codable {
     }
 }
 
-func decodeJSON(responseData: Data) {
+func processResponse(responseData: Data) {
     let decoder = JSONDecoder()
     
     do {
