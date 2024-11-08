@@ -1,0 +1,89 @@
+import Foundation
+
+struct Response: Codable {
+    let payload: Payload
+}
+
+struct Payload: Codable {
+    let card: Card
+    let payment: Payment
+    let device: Device
+}
+
+struct Card: Codable {
+    let token: String
+}
+
+struct Payment: Codable {
+    let proCode: String
+    let transAmount: String
+    let transmisDateTime: String
+    let systemTraceNo: String
+    let timeLocalTrans: String
+    let dateLocalTrans: String
+    let retrievalReferNo: String
+    let transCurrencyCode: String
+    let serviceCode: String
+
+    enum CodingKeys: String, CodingKey {
+        case proCode = "pro_code"
+        case transAmount = "trans_amount"
+        case transmisDateTime = "transmis_date_time"
+        case systemTraceNo = "system_trace_no"
+        case timeLocalTrans = "time_local_trans"
+        case dateLocalTrans = "date_local_trans"
+        case retrievalReferNo = "retrieval_refer_no"
+        case transCurrencyCode = "trans_currency_code"
+        case serviceCode = "service_code"
+    }
+}
+
+struct Device: Codable {
+    let merchantType: String
+    let pointServiceEntryCode: String
+    let pointServiceConCode: String
+    let cardAcptTerminalCode: String
+    let cardAcptIdenCode: String
+    let cardAcptNameLocation: String
+
+    enum CodingKeys: String, CodingKey {
+        case merchantType = "merchant_type"
+        case pointServiceEntryCode = "point_service_entry_code"
+        case pointServiceConCode = "point_service_con_code"
+        case cardAcptTerminalCode = "card_acpt_terminal_code"
+        case cardAcptIdenCode = "card_acpt_iden_code"
+        case cardAcptNameLocation = "card_acpt_name_location"
+    }
+}
+
+func decodeJSON(responseData: Data) {
+    let decoder = JSONDecoder()
+    
+    do {
+        let response = try decoder.decode(Response.self, from: responseData)
+        
+        // Extract fields from the decoded response
+        let token = response.payload.card.token
+        let proCode = response.payload.payment.proCode
+        let transAmount = response.payload.payment.transAmount
+        let transmisDateTime = response.payload.payment.transmisDateTime
+        let systemTraceNo = response.payload.payment.systemTraceNo
+        let timeLocalTrans = response.payload.payment.timeLocalTrans
+        let dateLocalTrans = response.payload.payment.dateLocalTrans
+        let retrievalReferNo = response.payload.payment.retrievalReferNo
+        let transCurrencyCode = response.payload.payment.transCurrencyCode
+        let serviceCode = response.payload.payment.serviceCode
+        let merchantType = response.payload.device.merchantType
+        let pointServiceEntryCode = response.payload.device.pointServiceEntryCode
+        let pointServiceConCode = response.payload.device.pointServiceConCode
+        let cardAcptTerminalCode = response.payload.device.cardAcptTerminalCode
+        let cardAcptIdenCode = response.payload.device.cardAcptIdenCode
+        let cardAcptNameLocation = response.payload.device.cardAcptNameLocation
+        
+        // You can now use these variables as needed
+        print(token, proCode, transAmount)
+        
+    } catch {
+        print("Error decoding JSON: \(error)")
+    }
+}
