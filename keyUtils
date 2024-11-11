@@ -125,3 +125,23 @@ func signerJWS(strData: String, privateKey: SecKey, keyID: String) -> String? {
         return nil
     }
 }
+
+func genSignature(plainText: String, privateKey: SecKey) throws -> String {
+    guard let data = plainText.data(using: .utf8) else {
+        throw NSError(domain: "Invalid input encoding", code: 0, userInfo: nil)
+    }
+    
+    let algorithm: SecKeyAlgorithm = .rsaSignatureMessagePSSSHA512
+    
+    // Ensure the algorithm is supported
+    guard SecKeyIsAlgorithmSupported(privateKey, .sign, algorithm) else {
+        throw NSError(domain: "Algorithm not supported", code: 0, userInfo: nil)
+    }
+    
+    var error: Unmanaged<CFError>?
+    guard let signature = SecKeyCreateSignature(privateKey, algorithm, data as CFData, &error) else {
+        throw error!.takeRetainedValue() as Error
+    }
+    
+    return (signature as Data).base64EncodedString()
+}
