@@ -1,103 +1,53 @@
-import SwiftUI
+private var audioBuffer: [Int16] = []
 
-struct VoiceEnrollmentView: View {
-    // State variables to manage enrollment process
-    @State private var enrollmentProgress: Double = 0.0
-    @State private var statusMessage: String = "Voice Authentication Enrollment"
-    @State private var isEnrolling: Bool = false
-    
-    var body: some View {
-        VStack {
-            // Status Text at the top
-            Text(statusMessage)
-                .font(.headline)
-                .foregroundColor(.primary)
-                .padding()
-            
-            Spacer()
-            
-            // Circular Progress Bar
-            ZStack {
-                // Background circle
-                Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 20)
-                
-                // Progress circle
-                Circle()
-                    .trim(from: 0, to: CGFloat(enrollmentProgress))
-                    .stroke(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.blue, Color.purple]),
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        ),
-                        style: StrokeStyle(
-                            lineWidth: 20,
-                            lineCap: .round,
-                            lineJoin: .round
-                        )
-                    )
-                    .rotationEffect(Angle(degrees: -90))
-                    .animation(.spring(), value: enrollmentProgress)
-                
-                // Percentage Text
-                Text("\(Int(enrollmentProgress * 100))%")
-                    .font(.largeTitle)
-                    .fontWeight(.bold)
-            }
-            .frame(width: 250, height: 250)
-            
-            Spacer()
-            
-            // Enroll Button
-            Button(action: {
-                startVoiceEnrollment()
-            }) {
-                Text("Enroll Voice")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(
-                        LinearGradient(
-                            gradient: Gradient(colors: [Color.blue, Color.purple]),
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .cornerRadius(10)
-                    .shadow(radius: 5)
-            }
-            .padding()
-            .disabled(isEnrolling)
+self.testListener = VoiceProcessorFrameListener({ pcm in
+    do {
+        // Append the incoming PCM frames to the buffer.
+        self.audioBuffer.append(contentsOf: pcm)
+        
+        // Optionally, still write to dump file if needed.
+        try self.appendToDumpFile(pcm: pcm)
+    } catch {
+        self.errorMessage = "Error appending pcm frames."
+        try? self.stopTest()
+    }
+})
+
+public func stopTest() throws {
+    VoiceProcessor.instance.removeErrorListener(testErrorListener!)
+    VoiceProcessor.instance.removeFrameListener(testListener!)
+
+    if VoiceProcessor.instance.numFrameListeners == 0 {
+        do {
+            try VoiceProcessor.instance.stop()
+        } catch {
+            throw EagleError(error.localizedDescription)
         }
-        .padding()
+    }
+
+    // Process the entire accumulated audio chunk
+    do {
+        let profileScores = try self.eagle.process(pcm: self.audioBuffer)
+        DispatchQueue.main.async {
+            self.scores = profileScores
+        }
+    } catch {
+        self.errorMessage = "Failed to process the accumulated audio chunk."
     }
     
-    // Simulated enrollment process
-    func startVoiceEnrollment() {
-        isEnrolling = true
-        statusMessage = "Recording Voice Sample"
-        
-        // Simulate enrollment progress
-        Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { timer in
-            if enrollmentProgress < 1.0 {
-                enrollmentProgress += 0.1
-            } else {
-                timer.invalidate()
-                statusMessage = "Voice Enrollment Complete"
-                isEnrolling = false
-            }
-        }
+    // Clean up Eagle instance
+    if eagle != nil {
+        eagle.delete()
+        eagle = nil
+    }
+    
+    // Reset audio buffer for next test
+    self.audioBuffer.removeAll()
+
+    DispatchQueue.main.async {
+        self.state = UIState.INTRO
     }
 }
 
-struct VoiceEnrollmentView_Previews: PreviewProvider {
-    static var previews: some View {
-        VoiceEnrollmentView()
-            .preferredColorScheme(.light)
-        
-        VoiceEnrollmentView()
-            .preferredColorScheme(.dark)
-    }
-}
+
+
