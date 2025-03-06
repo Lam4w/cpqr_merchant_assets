@@ -1,0 +1,254 @@
+import SwiftUI
+
+struct Discover: View {
+    var body: some View {
+        ZStack {
+            Color.background
+                .edgesIgnoringSafeArea(.all)
+            
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    HeaderSection()
+                    RecommendationSection()
+                    AllSoupsHeader()
+                    LocationSection()
+                    SoupList()
+                    PromotionSection()
+                }
+            }
+            .cornerRadius(30)
+        }
+    }
+}
+
+// MARK: - Subviews
+
+private struct HeaderSection: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            AppLogo()
+                .padding(.vertical, .verticalPaddingLarge)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Chorba Saati!")
+                    .sectionSubtitle()
+                
+                Text("Sana En Yakın Chorbacıyı Bulduk")
+                    .sectionTitle()
+            }
+            .padding(.horizontal, .horizontalPadding)
+            .padding(.bottom, 15)
+        }
+    }
+}
+
+private struct RecommendationSection: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 19)
+            .fill(Color.lightBackground)
+            .frame(height: 136)
+            .padding(.horizontal, 12)
+            .padding(.bottom, 19)
+    }
+}
+
+private struct AllSoupsHeader: View {
+    var body: some View {
+        Text("Tüm Chorbalar")
+            .sectionTitle()
+            .padding(.leading, 23)
+            .padding(.bottom, 7)
+    }
+}
+
+private struct LocationSection: View {
+    var body: some View {
+        HStack {
+            HStack {
+                ImageView(url: "location-icon-url", size: CGSize(width: 9, height: 11))
+                Text("İstanbul, Ataköy")
+                    .locationText()
+                
+                Spacer()
+                
+                Text("Hepsini Gör")
+                    .seeAllText()
+            }
+            .padding(.horizontal, 28)
+            .padding(.bottom, 15)
+        }
+    }
+}
+
+private struct SoupList: View {
+    var body: some View {
+        VStack(spacing: 17) {
+            SoupItem(
+                imageUrl: "soup1-image-url",
+                title: "Karışık",
+                price: "70 TL",
+                ratingImageUrl: "rating-image-url",
+                timeImageUrl: "time-image-url"
+            )
+            
+            SoupItem(
+                imageUrl: "soup2-image-url",
+                title: "Mercimek",
+                price: "70 TL",
+                ratingImageUrl: "rating-image-url",
+                timeImageUrl: "time-image-url"
+            )
+            
+            FeaturedSoupItem()
+        }
+        .padding(.horizontal, 12)
+    }
+}
+
+private struct PromotionSection: View {
+    var body: some View {
+        PromotionCard()
+            .padding(.trailing, 9)
+            .padding(.bottom, 49)
+    }
+}
+
+// MARK: - Reusable Components
+
+private struct AppLogo: View {
+    var body: some View {
+        ImageView(url: "app-logo-url", size: nil)
+            .frame(height: 18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 23)
+    }
+}
+
+private struct SoupItem: View {
+    let imageUrl: String
+    let title: String
+    let price: String
+    let ratingImageUrl: String
+    let timeImageUrl: String
+    
+    var body: some View {
+        HStack(alignment: .top, spacing: 0) {
+            ImageView(url: imageUrl, size: CGSize(width: 133, height: 132))
+            
+            VStack(alignment: .leading) {
+                Text(title)
+                    .soupTitle()
+                
+                ImageView(url: ratingImageUrl, size: CGSize(width: 64, height: 13))
+                    .padding(.bottom, 21)
+                
+                ImageView(url: timeImageUrl, size: CGSize(width: 45, height: 12))
+            }
+            .padding(.vertical, 30)
+            
+            Spacer()
+            
+            ActionButtons()
+        }
+        .padding(.horizontal, 8)
+    }
+}
+
+private struct FeaturedSoupItem: View {
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            ImageView(url: "featured-soup-image-url", size: nil)
+                .frame(height: 150)
+            
+            VStack(alignment: .leading) {
+                Text("Karemelize Soğanlı Rezene")
+                    .featuredSoupTitle()
+                
+                Spacer()
+                
+                HStack {
+                    Text("95 TL")
+                        .featuredSoupPrice()
+                    
+                    ImageView(url: "rating-image-url", size: CGSize(width: 45, height: 12))
+                }
+            }
+            .padding()
+        }
+        .overlay(ActionButtons(), alignment: .trailing)
+    }
+}
+
+private struct ActionButtons: View {
+    var body: some View {
+        VStack {
+            Button(action: {}) {
+                ImageView(url: "favorite-icon-url", size: CGSize(width: 20, height: 33))
+            }
+            
+            Button(action: {}) {
+                ImageView(url: "cart-icon-url", size: CGSize(width: 39, height: 38))
+            }
+        }
+    }
+}
+
+private struct PromotionCard: View {
+    var body: some View {
+        ZStack(alignment: .bottomTrailing) {
+            RoundedRectangle(cornerRadius: 25)
+                .fill(Color.promotionBackground)
+            
+            VStack(alignment: .leading) {
+                ImageView(url: "promotion-image-url", size: nil)
+                    .cornerRadius(19)
+                    .frame(height: 154)
+                
+                Text("Seçtiğin Chorba\nGeri Dönüşüm Paketlerde Anında Kapında")
+                    .promotionText()
+            }
+            .padding()
+        }
+        .frame(width: 409)
+    }
+}
+
+// MARK: - Extensions
+
+private extension Text {
+    func sectionTitle() -> some View {
+        self
+            .font(.system(size: 22, weight: .bold))
+            .foregroundColor(.primaryText)
+    }
+    
+    func sectionSubtitle() -> some View {
+        self
+            .font(.system(size: 13, weight: .bold))
+            .foregroundColor(.secondaryText)
+    }
+    
+    // Add other text style extensions similarly...
+}
+
+private extension Color {
+    static let background = Color(hex: "#FFFFFF")
+    static let primaryText = Color(hex: "#000000")
+    static let secondaryText = Color(hex: "#A2A2A2")
+    static let lightBackground = Color(hex: "#E4EAEC")
+    static let promotionBackground = Color(hex: "#FCFCFC")
+}
+
+private extension CGFloat {
+    static let horizontalPadding: CGFloat = 14
+    static let verticalPaddingLarge: CGFloat = 28
+    // Add other spacing constants...
+}
+
+// MARK: - Preview
+
+struct Discover_Previews: PreviewProvider {
+    static var previews: some View {
+        Discover()
+    }
+}
