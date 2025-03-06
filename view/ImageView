@@ -1,0 +1,36 @@
+struct ImageView: View {
+    let url: String
+    let size: CGSize?
+    
+    init(url: String, size: CGSize? = nil) {
+        self.url = url
+        self.size = size
+    }
+    
+    var body: some View {
+        AsyncImage(url: URL(string: url)) { phase in
+            if let image = phase.image {
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(size: size)
+            } else if phase.error != nil {
+                Color.gray // Error state
+            } else {
+                ProgressView() // Loading state
+            }
+        }
+    }
+}
+
+// Frame modifier helper
+extension View {
+    @ViewBuilder
+    func frame(size: CGSize?) -> some View {
+        if let size = size {
+            self.frame(width: size.width, height: size.height)
+        } else {
+            self
+        }
+    }
+}
