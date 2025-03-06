@@ -1,0 +1,307 @@
+import SwiftUI
+struct Discover: View {
+	var body: some View {
+		VStack(alignment: .leading, spacing: 0){
+			ScrollView(){
+				VStack(alignment: .leading, spacing: 0) {
+					URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/aba9b5bf-29c5-4d5c-8ea4-27b8518fc8fe")
+						.frame(height: 18)
+						.frame(maxWidth: .infinity, alignment: .leading)
+						.padding(.top,38)
+						.padding(.bottom,28)
+						.padding(.horizontal,23)
+					VStack(alignment: .leading, spacing: 0){
+						Text("Chorba Saati!")
+							.foregroundColor(Color(hex: "#A2A2A2"))
+							.font(.system(size: 13))
+							.fontWeight(.bold)
+							.padding(.bottom,1)
+						VStack(alignment: .leading, spacing: 0){
+							Text("Sana En Yakın Chorbacıyı Bulduk")
+								.foregroundColor(Color(hex: "#000000"))
+								.font(.system(size: 22))
+								.fontWeight(.bold)
+								.frame(maxWidth: .infinity, alignment: .leading)
+						}
+						.padding(.vertical,5)
+						.frame(maxWidth: .infinity, alignment: .leading)
+					}
+					.padding(.vertical,4)
+					.frame(maxWidth: .infinity, alignment: .leading)
+					.padding(.bottom,15)
+					.padding(.horizontal,14)
+					VStack(alignment: .leading, spacing: 0){
+						VStack(alignment: .leading, spacing: 0){
+							HStack(alignment: .top, spacing: 0){
+							}
+							.frame(maxWidth: .infinity, alignment: .top)
+							.padding(.bottom,4)
+							.padding(.horizontal,55)
+							Spacer()
+						}
+						.frame(height: 136)
+						.frame(maxWidth: .infinity, alignment: .leading)
+						.background(Color(hex: "#E4EAEC"))
+						.cornerRadius(19)
+						.padding(.horizontal,12)
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+					.padding(.bottom,19)
+					Text("Tüm Chorbalar")
+						.foregroundColor(Color(hex: "#000000"))
+						.font(.system(size: 24))
+						.fontWeight(.bold)
+						.padding(.bottom,7)
+						.padding(.leading,23)
+					HStack(spacing: 0){
+						URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/a4aa38b6-3e40-4870-a68e-4884eb5cb036")
+							.frame(width : 9, height: 11, alignment: .leading)
+							.padding(.trailing,4)
+						Text("İstanbul, Ataköy")
+							.foregroundColor(Color(hex: "#A2A2A2"))
+							.font(.system(size: 13))
+							.fontWeight(.bold)
+							.frame(maxWidth: .infinity, alignment: .leading)
+						Text("Hepsini Gör")
+							.foregroundColor(Color(hex: "#A2A2A2"))
+							.font(.system(size: 10))
+							.fontWeight(.bold)
+							.padding(.vertical,2)
+					}
+					.frame(maxWidth: .infinity)
+					.padding(.bottom,15)
+					.padding(.horizontal,28)
+					HStack(alignment: .top, spacing: 0){
+						URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/6eaa1d00-5d84-4e36-8c4c-45bb67d265a2")
+							.frame(width : 133, height: 132, alignment: .leading)
+							.padding(.trailing,4)
+						VStack(alignment: .leading, spacing: 0){
+							Text("Karışık")
+								.foregroundColor(Color(hex: "#000000"))
+								.font(.system(size: 20))
+								.fontWeight(.bold)
+								.padding(.bottom,10)
+								.padding(.horizontal,4)
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/e463a7dd-67f8-4758-aa40-f6e95d97a264")
+								.frame(width : 64, height: 13, alignment: .leading)
+								.padding(.bottom,21)
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/44e6a1f3-fc11-451e-b0b6-3cdd67a0d8d6")
+								.frame(width : 45, height: 12, alignment: .leading)
+								.padding(.leading,3)
+						}
+						.padding(.vertical,30)
+						VStack(alignment: .leading, spacing: 0){
+						}
+						.frame(maxWidth: .infinity, alignment: .leading)
+						VStack(alignment: .leading, spacing: 0){
+						}
+						.frame(width : 40, height: 38, alignment: .leading)
+						.background(Color(hex: "#FFFFFF"))
+						.cornerRadius(11)
+						.padding(.top,81)
+						.padding(.bottom,13)
+						.padding(.trailing,13)
+						VStack(alignment: .leading, spacing: 0){
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/942a3a3c-011b-4484-9be6-3e2754af8c99")
+								.frame(width : 20, height: 33, alignment: .leading)
+								.padding(.bottom,37)
+								.padding(.horizontal,11)
+							VStack(alignment: .leading, spacing: 0){
+							}
+							.frame(width : 39, height: 38, alignment: .leading)
+							.background(Color(hex: "#FFFFFF"))
+							.cornerRadius(11)
+						}
+						.padding(.vertical,11)
+					}
+					.padding(.horizontal,8)
+					.frame(height: 19)
+					.frame(maxWidth: .infinity, alignment: .top)
+					.overlay(
+						URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/0b13e01d-26b6-4b39-a63c-5959b4446887")
+							.frame(width : 73, height: 19, alignment: .leading)
+							.padding(.bottom, 22)
+							.padding(.trailing, 21)
+						, alignment: .bottomTrailing
+					)
+					.padding(.bottom,17)
+					.padding(.horizontal,12)
+					HStack(alignment: .top, spacing: 0){
+						URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/64fc196b-9153-4a47-bdfe-7205533aaa5e")
+							.cornerRadius(69)
+							.frame(width : 130, height: 129, alignment: .leading)
+							.padding(.vertical,3)
+							.padding(.trailing,9)
+						VStack(alignment: .leading, spacing: 0){
+							VStack(alignment: .leading, spacing: 0){
+								Text("Mercimek")
+									.foregroundColor(Color(hex: "#000000"))
+									.font(.system(size: 20))
+									.fontWeight(.bold)
+									.frame(maxWidth: .infinity, alignment: .leading)
+									.fixedSize(horizontal: false, vertical: true)
+									.padding(.bottom,9)
+								Text("70 TL")
+									.foregroundColor(Color(hex: "#000000"))
+									.font(.system(size: 18))
+									.fontWeight(.bold)
+							}
+							.padding(.vertical,4)
+							.frame(maxWidth: .infinity, alignment: .leading)
+							.padding(.bottom,15)
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/d32c2922-18a2-4a67-9530-278f87e50b30")
+								.frame(width : 45, height: 12, alignment: .leading)
+						}
+						.frame(maxWidth: .infinity, alignment: .leading)
+						.padding(.vertical,24)
+						.padding(.trailing,63)
+						URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/95b3a8f7-e35a-4e65-a102-a24e421e1163")
+							.cornerRadius(11)
+							.frame(width : 40, height: 38, alignment: .leading)
+							.padding(.top,79)
+							.padding(.bottom,15)
+							.padding(.trailing,13)
+						VStack(alignment: .leading, spacing: 0){
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/16108a17-3f9b-4cd1-856a-dd4913a09770")
+								.frame(width : 15, height: 32, alignment: .leading)
+								.padding(.bottom,38)
+								.padding(.horizontal,13)
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/8871ae3e-a1d8-42eb-aab9-60f7b390adee")
+								.cornerRadius(11)
+								.frame(width : 39, height: 38, alignment: .leading)
+						}
+						.padding(.vertical,9)
+					}
+					.padding(.horizontal,9)
+					.frame(maxWidth: .infinity, alignment: .top)
+					.padding(.bottom,17)
+					.padding(.horizontal,12)
+					HStack(alignment: .top, spacing: 0){
+						VStack(alignment: .leading, spacing: 0){
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/a5be7250-19eb-4618-9430-be207b2a69ed")
+								.frame(height: 150)
+								.frame(maxWidth: .infinity, alignment: .leading)
+						}
+						.frame(maxWidth: .infinity, alignment: .leading)
+						.overlay(
+							Text("Karemelize Soğanlı Rezene")
+								.foregroundColor(Color(hex: "#000000"))
+								.font(.system(size: 18))
+								.fontWeight(.bold)
+								.padding(.top, 26)
+								.padding(.leading, 147)
+								.frame(width : 153, alignment: .leading)
+								.fixedSize(horizontal: false, vertical: true)
+							, alignment: .topLeading
+						)
+						.overlay(
+							Text("95 TL")
+								.foregroundColor(Color(hex: "#000000"))
+								.font(.system(size: 18))
+								.fontWeight(.bold)
+								.padding(.bottom, 64)
+								.padding(.trailing, -38)
+							, alignment: .bottomTrailing
+						)
+						.overlay(
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/c8f1386b-bcf8-4cfb-a095-708eb997870d")
+								.frame(width : 45, height: 12, alignment: .leading)
+								.padding(.bottom, 35)
+								.padding(.trailing, -40)
+							, alignment: .bottomTrailing
+						)
+						.padding(.trailing,50)
+						URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/4116bb10-5b44-4bc3-b0e1-d499f0ca61bb")
+							.frame(width : 13, height: 12, alignment: .leading)
+							.padding(.vertical,67)
+							.padding(.trailing,86)
+						VStack(alignment: .leading, spacing: 0){
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/eb89c0b9-ba46-485c-8829-64458e992752")
+								.frame(width : 21, height: 19, alignment: .leading)
+						}
+						.padding(10)
+						.background(Color(hex: "#FFFFFF"))
+						.cornerRadius(11)
+						.padding(.top,90)
+						.padding(.bottom,22)
+						.padding(.trailing,13)
+						VStack(alignment: .leading, spacing: 0){
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/b27a91df-67fe-416e-b8c6-53ebc392018f")
+								.frame(width : 15, height: 14, alignment: .leading)
+								.padding(.bottom,9)
+								.padding(.horizontal,13)
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/792109a6-00ba-4761-bb37-2e0a5c5c3a9d")
+								.frame(width : 20, height: 11, alignment: .leading)
+								.padding(.bottom,36)
+								.padding(.horizontal,11)
+							VStack(alignment: .leading, spacing: 0){
+								URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/de41e71f-6d6f-4347-80f4-8553860c17d9")
+									.frame(width : 21, height: 19, alignment: .leading)
+							}
+							.padding(.vertical,10)
+							.padding(.horizontal,9)
+							.background(Color(hex: "#FFFFFF"))
+							.cornerRadius(11)
+						}
+						.padding(.vertical,20)
+					}
+					.padding(.horizontal,2)
+					.frame(maxWidth: .infinity, alignment: .top)
+					.padding(.bottom,21)
+					.padding(.horizontal,9)
+					VStack(alignment: .trailing, spacing: 0){
+						VStack(alignment: .leading, spacing: 0){
+							URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/3a7fdec9-ef82-40ca-8305-4d13b82bc1ec")
+								.frame(height: 190)
+								.frame(maxWidth: .infinity, alignment: .leading)
+						}
+						.frame(width : 191, alignment: .leading)
+						.overlay(
+							ZStack{
+								URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/eeb33f59-552d-46ca-928e-0fd039d360b6")
+								.frame(width : 409, alignment: .leading)
+								.cornerRadius(25)
+								.padding(.bottom, 15)
+								.padding(.trailing, 3)
+								VStack(alignment: .leading, spacing: 0){
+									VStack(alignment: .leading, spacing: 0){
+										URLImageView(url: "https://figma-alpha-api.s3.us-west-2.amazonaws.com/images/6c16fb93-3561-4908-b109-9a8f31a1aa91")
+											.cornerRadius(19)
+											.frame(height: 154)
+											.frame(maxWidth: .infinity, alignment: .leading)
+									}
+									.frame(maxWidth: .infinity, alignment: .leading)
+									.overlay(
+										Text("Seçtiğin Chorba\nGeri Dönüşüm Paketlerde Anında Kapında")
+											.foregroundColor(Color(hex: "#595D6C"))
+											.font(.system(size: 16))
+											.fontWeight(.bold)
+											.padding(.top, 51)
+											.padding(.leading, 18)
+											.frame(width : 180, alignment: .leading)
+											.fixedSize(horizontal: false, vertical: true)
+										, alignment: .topLeading
+									)
+									.padding(.horizontal,2)
+								}
+								.frame(width : 409, alignment: .leading)
+								.padding(.bottom, 15)
+								.padding(.trailing, 3)
+							}, alignment: .bottomTrailing
+						)
+						.padding(.trailing,9)
+					}
+					.frame(maxWidth: .infinity, alignment: .trailing)
+					.padding(.bottom,49)
+				}
+			}
+			.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+			.background(Color(hex: "#FCFCFC"))
+			.cornerRadius(30)
+		}
+		.padding(.top,0.1)
+		.padding(.bottom,0.1)
+		.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+		.background(Color(hex: "#FFFFFF"))
+	}
+}
