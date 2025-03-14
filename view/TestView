@@ -96,3 +96,23 @@ export function getInt16Frames(
 
   return frames;
 }
+
+struct CustomProgressView: View {
+    let progress: CGFloat = 0.4 // Adjust this to set the progress (40% filled)
+    
+    var body: some View {
+        ZStack(alignment: .leading) {
+            // Background Track
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color.gray.opacity(0.3)) // Light gray background
+                .frame(height: 8)
+            
+            // Progress Bar (Green with Blur Effect)
+            RoundedRectangle(cornerRadius: 10)
+                .fill(Color(hex: "#1E3D35")) // Dark green color
+                .frame(width: 200 * progress, height: 8) // Adjust width dynamically
+                .blur(radius: 2) // Adds the soft glow/blur effect
+        }
+        .frame(width: 200, height: 8) // Set a fixed width for the progress bar
+    }
+}
