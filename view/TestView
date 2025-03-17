@@ -1,40 +1,19 @@
-struct SpecialOffersView: View {
-    let offers: [String] = ["offer1", "offer2", "offer3"] // Image names in assets
-    
+import SwiftUI
+
+struct ContentView: View {
     var body: some View {
-        VStack(alignment: .leading) {
-            // Header
-            HStack {
-                Text("Special Offers")
-                    .font(.title2)
-                    .bold()
-                
-                Spacer()
-                
-                Button(action: {
-                    // Handle "View All" action
-                }) {
-                    Text("View All")
-                        .foregroundColor(.green)
-                        .bold()
-                }
-            }
-            .padding(.horizontal)
+        ZStack {
+            Circle()
+                .fill(Color(hex: "#1E3D35")) // Dark green background
+                .frame(width: 150, height: 150)
             
-            // Horizontal Scrollable Cards
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(offers, id: \.self) { offer in
-                        Image(offer)
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 180, height: 220) // Adjust card size
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
-                            .shadow(radius: 4)
-                    }
-                }
-                .padding(.horizontal)
-            }
+            Image("drink") // Replace with your image name in Assets
+                .resizable()
+                .scaledToFill() // Ensures the image fills the space
+                .frame(width: 150, height: 200) // Adjust height to move the focus
+                .clipped()
+                .offset(y: -25) // Moves the image up to show more of the top
+                .clipShape(Circle())
         }
     }
 }
