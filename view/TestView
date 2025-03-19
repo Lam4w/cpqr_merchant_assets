@@ -1,19 +1,53 @@
 import SwiftUI
-
-struct ContentView: View {
-    var body: some View {
-        ZStack {
-            Circle()
-                .fill(Color(hex: "#1E3D35")) // Dark green background
-                .frame(width: 150, height: 150)
-            
-            Image("drink") // Replace with your image name in Assets
-                .resizable()
-                .scaledToFill() // Ensures the image fills the space
-                .frame(width: 150, height: 200) // Adjust height to move the focus
-                .clipped()
-                .offset(y: -25) // Moves the image up to show more of the top
-                .clipShape(Circle())
-        }
-    }
+struct TypingAnimationView: View {
+let textToType: String
+@State private var animatedText: String
+private let main : DispatchQueue
+init(textToType: String) {
+self.textToType = textToType
+self.animatedText = String(repeating: " ", count: textToType.count)
+self.main = DispatchQueue.main
+}
+var body: some View {
+Text(animatedText)
+.font(.title)
+.onAppear { animateText() }
+}
+func animateText() {
+for (index, character) in textToType.enumerated() {
+main.asyncAfter(deadline: .now() + Double(index) * 0.2) {
+let sindex = animatedText.index(animatedText.startIndex,
+offsetBy: index)
+animatedText.remove(at: sindex)
+animatedText.insert(character,
+at: sindex)
+UIImpactFeedbackGenerator(style: .light).impactOccurred()
+if index == textToType.count - 1 {
+main.asyncAfter(deadline: .now() + 0.8) {
+retractText()
+}
+}
+}
+}
+}
+func retractText() {
+for (index, _) in textToType.enumerated() {
+let time = index == textToType.count - 1 ? 0.218 : 0.2
+main.asyncAfter(deadline: .now() + Double(index) * time) {
+let sindex = animatedText.index(animatedText.startIndex,
+offsetBy: textToType.count - 1 - index)
+animatedText.remove(at: sindex)
+animatedText.insert(contentsOf: " ",
+at: sindex)
+UIImpactFeedbackGenerator(style: .light).impactOccurred()
+// Check if it's the last character
+if index == textToType.count - 1 {
+// If it's the last character, restart the typing animation
+main.asyncAfter(deadline: .now() + 0.8) {
+animateText()
+}
+}
+}
+}
+}
 }
