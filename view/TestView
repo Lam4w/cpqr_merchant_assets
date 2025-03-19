@@ -1,1 +1,77 @@
-Tôi đồng ý đăng ký giọng nói của mình để sử dụng cho mục đích xác thực danh tính. Giọng nói của tôi sẽ được hệ thống ghi nhận và lưu trữ an toàn nhằm đảm bảo quá trình xác minh diễn ra chính xác và bảo mật. Tôi hiểu rằng công nghệ nhận diện giọng nói sẽ giúp tôi truy cập dịch vụ một cách nhanh chóng và thuận tiện, đồng thời tăng cường bảo vệ tài khoản của tôi trước các rủi ro bảo mật. Để đảm bảo chất lượng nhận diện, tôi sẽ đọc rõ ràng, tự nhiên và không thay đổi giọng điệu trong suốt quá trình đăng ký
+import SwiftUI
+
+struct SlidingAnimationView: View {
+    let textToType: String
+    let displayLength: Int
+    @State private var animatedText: String
+    private let main: DispatchQueue
+    
+    init(textToType: String, displayLength: Int) {
+        self.textToType = textToType
+        // Ensure displayLength is valid
+        self.displayLength = min(max(displayLength, 1), textToType.count)
+        // Start with spaces
+        self.animatedText = String(repeating: " ", count: self.displayLength)
+        self.main = DispatchQueue.main
+    }
+    
+    var body: some View {
+        Text(animatedText)
+            .font(.title)
+            .frame(width: CGFloat(displayLength) * 15) // Approximate width based on character count
+            .onAppear {
+                animateText()
+            }
+    }
+    
+    func animateText() {
+        var currentPosition = 0
+        let totalLength = textToType.count
+        
+        func scheduleNextCharacter() {
+            if currentPosition < totalLength {
+                let character = textToType[textToType.index(textToType.startIndex, offsetBy: currentPosition)]
+                
+                main.asyncAfter(deadline: .now() + 0.2) {
+                    if animatedText.count >= displayLength {
+                        // Remove first character
+                        animatedText.removeFirst()
+                    }
+                    // Add new character at the end
+                    animatedText.append(character)
+                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    
+                    // Move to next character
+                    currentPosition += 1
+                    scheduleNextCharacter()
+                }
+            } else {
+                // Finished typing all characters, restart after a pause
+                main.asyncAfter(deadline: .now() + 1.5) {
+                    resetAndRestart()
+                }
+            }
+        }
+        
+        // Start the animation
+        scheduleNextCharacter()
+    }
+    
+    func resetAndRestart() {
+        // Reset to empty (spaces)
+        animatedText = String(repeating: " ", count: displayLength)
+        
+        // Wait a moment before restarting
+        main.asyncAfter(deadline: .now() + 0.8) {
+            animateText()
+        }
+    }
+}
+
+// Example usage
+struct ContentView: View {
+    var body: some View {
+        SlidingAnimationView(textToType: "Welcome to my SwiftUI typing animation!", displayLength: 12)
+            .padding()
+    }
+}
