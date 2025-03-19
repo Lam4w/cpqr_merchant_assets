@@ -1,154 +1,108 @@
 import SwiftUI
 
-struct ContinuousScrollingTextView: View {
+struct TypingAnimationView: View {
     let textToType: String
-    let displayWidth: Int
-    let numberOfLines: Int = 3
+    @State private var animatedText: String
+    @State private var currentLineCount: Int = 1
+    @State private var lineHeight: CGFloat = 0
+    @State private var exceedsThreeLines = false
+    private let main = DispatchQueue.main
+    private let characterDelay = 0.1
+    private let retractDelay = 0.8
     
-    @State private var animatedLines: [String]
-    @State private var isPaused: Bool = false
-    @State private var currentPosition: Int = 0
-    
-    private let main: DispatchQueue
-    
-    init(textToType: String, displayWidth: Int) {
+    init(textToType: String) {
         self.textToType = textToType
-        self.displayWidth = max(displayWidth, 1)
-        
-        // Initialize with empty lines
-        self._animatedLines = State(initialValue: Array(repeating: String(repeating: " ", count: displayWidth), count: 3))
-        self.main = DispatchQueue.main
+        self.animatedText = ""
+        let font = UIFont.preferredFont(forTextStyle: .title1)
+        self.lineHeight = font.lineHeight
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            // Display the three lines
-            ForEach(0..<numberOfLines, id: \.self) { index in
-                Text(animatedLines[index])
-                    .font(.system(size: 18, design: .monospaced))
-                    .padding(4)
-                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
-                    .background(Color.gray.opacity(0.1))
-                    .cornerRadius(4)
-            }
-            
-            HStack(spacing: 20) {
-                Button(action: {
-                    togglePause()
-                }) {
-                    Text(isPaused ? "Continue" : "Pause")
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(isPaused ? Color.green : Color.red)
-                        .cornerRadius(8)
-                }
-                
-                Button(action: {
-                    resetAndRestart()
-                }) {
-                    Text("Reset")
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(Color.blue)
-                        .cornerRadius(8)
-                }
-            }
-            .padding(.top, 20)
+        GeometryReader { geometry in
+            Text(animatedText)
+                .font(.title)
+                .background(
+                    GeometryReader { textGeometry in
+                        Color.clear
+                            .onChange(of: textGeometry.size.height) { height in
+                                exceedsThreeLines = height > lineHeight * 3
+                            }
+                    }
+                )
+                .onAppear { animateText() }
+                .frame(width: geometry.size.width, alignment: .leading)
         }
-        .padding()
-        .onAppear {
-            animateText()
-        }
-    }
-    
-    func togglePause() {
-        isPaused.toggle()
-        
-        if !isPaused {
-            continueAnimation()
-        }
+        .frame(minHeight: lineHeight * 3)
     }
     
     func animateText() {
-        currentPosition = 0
-        continueAnimation()
-    }
-    
-    func continueAnimation() {
-        let totalLength = textToType.count
-        
-        func scheduleNextCharacter() {
-            if !isPaused {
-                // Get next character (loop through text if needed)
-                let effectivePosition = currentPosition % totalLength
-                let character = textToType[textToType.index(textToType.startIndex, offsetBy: effectivePosition)]
+        for (index, character) in textToType.enumerated() {
+            main.asyncAfter(deadline: .now() + Double(index) * characterDelay) {
+                animatedText.append(character)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 
-                main.asyncAfter(deadline: .now() + 0.1) {
-                    if isPaused {
-                        return
+                if index == textToType.count - 1 {
+                    main.asyncAfter(deadline: .now() + retractDelay) {
+                        retractText()
                     }
-                    
-                    // Shift characters up
-                    var newLines = animatedLines
-                    
-                    // Remove first character from top line
-                    if !newLines[0].isEmpty {
-                        newLines[0].removeFirst()
-                        newLines[0].append(" ")
-                    }
-                    
-                    // Shift characters between lines
-                    for i in 0..<(numberOfLines-1) {
-                        if !newLines[i+1].isEmpty && !newLines[i].isEmpty {
-                            let firstCharOfNextLine = newLines[i+1].first!
-                            newLines[i+1].removeFirst()
-                            newLines[i+1].append(" ")
-                            
-                            newLines[i].removeFirst()
-                            newLines[i].append(firstCharOfNextLine)
-                        }
-                    }
-                    
-                    // Add new character to the last line
-                    if !newLines[numberOfLines-1].isEmpty {
-                        newLines[numberOfLines-1].removeFirst()
-                    }
-                    newLines[numberOfLines-1].append(character)
-                    
-                    animatedLines = newLines
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    
-                    currentPosition += 1
-                    scheduleNextCharacter()
                 }
             }
         }
-        
-        scheduleNextCharacter()
     }
     
-    func resetAndRestart() {
-        currentPosition = 0
-        animatedLines = Array(repeating: String(repeating: " ", count: displayWidth), count: numberOfLines)
+    func retractText() {
+        if exceedsThreeLines {
+            startScrollingAnimation()
+        } else {
+            standardRetraction()
+        }
+    }
+    
+    func standardRetraction() {
+        for (index, _) in textToType.enumerated() {
+            main.asyncAfter(deadline: .now() + Double(index) * characterDelay) {
+                animatedText.removeLast()
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                
+                if index == textToType.count - 1 {
+                    main.asyncAfter(deadline: .now() + retractDelay) {
+                        animateText()
+                    }
+                }
+            }
+        }
+    }
+    
+    func startScrollingAnimation() {
+        var scrollIndex = 0
+        let totalScrolls = textToType.count * 2
         
-        if !isPaused {
-            main.asyncAfter(deadline: .now() + 0.8) {
-                if !isPaused {
+        func scrollStep() {
+            guard scrollIndex < totalScrolls else {
+                main.asyncAfter(deadline: .now() + retractDelay) {
+                    animatedText = ""
                     animateText()
                 }
+                return
+            }
+            
+            main.asyncAfter(deadline: .now() + Double(scrollIndex) * characterDelay) {
+                // Remove from top line
+                if !animatedText.isEmpty {
+                    animatedText.removeFirst()
+                }
+                
+                // Add to bottom line
+                let newCharIndex = (scrollIndex % textToType.count)
+                let newChar = Array(textToType)[newCharIndex]
+                animatedText.append(newChar)
+                
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                scrollIndex += 1
+                scrollStep()
             }
         }
-    }
-}
-
-// Example usage
-struct ContentView: View {
-    var body: some View {
-        ContinuousScrollingTextView(
-            textToType: "Welcome to my SwiftUI continuous scrolling text animation! This text will smoothly flow across three lines, with characters disappearing from the top and new ones appearing at the bottom, creating a continuous stream of characters that never stops. This is perfect for displaying long messages in a limited space.",
-            displayWidth: 30
-        )
+        
+        scrollStep()
     }
 }
