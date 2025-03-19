@@ -1,108 +1,27 @@
-import SwiftUI
-
-struct TypingAnimationView: View {
-    let textToType: String
-    @State private var animatedText: String
-    @State private var currentLineCount: Int = 1
-    @State private var lineHeight: CGFloat = 0
-    @State private var exceedsThreeLines = false
-    private let main = DispatchQueue.main
-    private let characterDelay = 0.1
-    private let retractDelay = 0.8
-    
-    init(textToType: String) {
-        self.textToType = textToType
-        self.animatedText = ""
-        let font = UIFont.preferredFont(forTextStyle: .title1)
-        self.lineHeight = font.lineHeight
-    }
-    
-    var body: some View {
-        GeometryReader { geometry in
-            Text(animatedText)
-                .font(.title)
-                .background(
-                    GeometryReader { textGeometry in
-                        Color.clear
-                            .onChange(of: textGeometry.size.height) { height in
-                                exceedsThreeLines = height > lineHeight * 3
-                            }
-                    }
-                )
-                .onAppear { animateText() }
-                .frame(width: geometry.size.width, alignment: .leading)
-        }
-        .frame(minHeight: lineHeight * 3)
-    }
-    
-    func animateText() {
-        for (index, character) in textToType.enumerated() {
-            main.asyncAfter(deadline: .now() + Double(index) * characterDelay) {
-                animatedText.append(character)
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                
-                if index == textToType.count - 1 {
-                    main.asyncAfter(deadline: .now() + retractDelay) {
-                        retractText()
-                    }
-                }
-            }
-        }
-    }
-    
-    func retractText() {
-        if exceedsThreeLines {
-            startScrollingAnimation()
-        } else {
-            standardRetraction()
-        }
-    }
-    
-    func standardRetraction() {
-        for (index, _) in textToType.enumerated() {
-            main.asyncAfter(deadline: .now() + Double(index) * characterDelay) {
-                animatedText.removeLast()
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                
-                if index == textToType.count - 1 {
-                    main.asyncAfter(deadline: .now() + retractDelay) {
-                        animateText()
-                    }
-                }
-            }
-        }
-    }
-    
-    func startScrollingAnimation() {
-        var scrollIndex = 0
-        let totalScrolls = textToType.count * 2
-        
-        func scrollStep() {
-            guard scrollIndex < totalScrolls else {
-                main.asyncAfter(deadline: .now() + retractDelay) {
-                    animatedText = ""
-                    animateText()
-                }
-                return
-            }
+private func fadeMask(leftFade: CGFloat, rightFade: CGFloat) -> some View {
+        HStack(spacing: 0) {
+            Rectangle().frame(width: 2).opacity(0)
             
-            main.asyncAfter(deadline: .now() + Double(scrollIndex) * characterDelay) {
-                // Remove from top line
-                if !animatedText.isEmpty {
-                    animatedText.removeFirst()
-                }
-                
-                // Add to bottom line
-                let newCharIndex = (scrollIndex % textToType.count)
-                let newChar = Array(textToType)[newCharIndex]
-                animatedText.append(newChar)
-                
-                UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                scrollIndex += 1
-                scrollStep()
-            }
+            LinearGradient(
+                gradient: Gradient(colors: [Color.black.opacity(0), Color.black]),
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: leftFade)
+            
+            LinearGradient(
+                gradient: Gradient(colors: [Color.black, Color.black]),
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            
+            LinearGradient(
+                gradient: Gradient(colors: [Color.black, Color.black.opacity(0)]),
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: rightFade)
+            
+            Rectangle().frame(width: 2).opacity(0)
         }
-        
-        scrollStep()
     }
-}
