@@ -1,35 +1,36 @@
 import SwiftUI
 
-struct SlidingAnimationView: View {
+struct MultilineSlidingAnimationView: View {
     let textToType: String
-    let displayLength: Int
-    @State private var animatedText: String
-    @State private var isPaused: Bool = false
-    private let main: DispatchQueue
+    let displayWidth: Int
+    let numberOfLines: Int = 3
     
-    // For keeping track of animation state when paused
+    @State private var animatedLines: [String]
+    @State private var isPaused: Bool = false
     @State private var currentPosition: Int = 0
     
-    init(textToType: String, displayLength: Int) {
+    private let main: DispatchQueue
+    
+    init(textToType: String, displayWidth: Int) {
         self.textToType = textToType
-        // Ensure displayLength is valid
-        self.displayLength = min(max(displayLength, 1), textToType.count)
-        // Start with spaces
-        self.animatedText = String(repeating: " ", count: self.displayLength)
+        self.displayWidth = max(displayWidth, 1)
+        
+        // Initialize with empty lines
+        self._animatedLines = State(initialValue: Array(repeating: String(repeating: " ", count: displayWidth), count: 3))
         self.main = DispatchQueue.main
     }
     
     var body: some View {
-        VStack {
-            Text(animatedText)
-                .font(.title)
-                .frame(width: CGFloat(displayLength) * 15) // Approximate width based on character count
-                .padding()
-                .background(Color.gray.opacity(0.2))
-                .cornerRadius(8)
-                .onAppear {
-                    animateText()
-                }
+        VStack(alignment: .leading, spacing: 2) {
+            // Display the three lines
+            ForEach(0..<3, id: \.self) { index in
+                Text(animatedLines[index])
+                    .font(.system(size: 18, design: .monospaced))
+                    .padding(4)
+                    .frame(minWidth: 0, maxWidth: .infinity, alignment: .leading)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(4)
+            }
             
             HStack(spacing: 20) {
                 Button(action: {
@@ -56,51 +57,90 @@ struct SlidingAnimationView: View {
             }
             .padding(.top, 20)
         }
+        .padding()
+        .onAppear {
+            animateText()
+        }
     }
     
     func togglePause() {
         isPaused.toggle()
         
         if !isPaused {
-            // Continue from where we left off
             continueAnimation()
         }
     }
     
     func animateText() {
-        // Reset position when starting fresh
         currentPosition = 0
         continueAnimation()
     }
     
     func continueAnimation() {
         let totalLength = textToType.count
+        let totalCapacity = displayWidth * numberOfLines
         
         func scheduleNextCharacter() {
             if currentPosition < totalLength && !isPaused {
                 let character = textToType[textToType.index(textToType.startIndex, offsetBy: currentPosition)]
                 
-                main.asyncAfter(deadline: .now() + 0.2) {
-                    // Check again if we're paused after the delay
+                main.asyncAfter(deadline: .now() + 0.1) {
                     if isPaused {
                         return
                     }
                     
-                    if animatedText.count >= displayLength {
-                        // Remove first character
-                        animatedText.removeFirst()
+                    // Calculate which line and position this character belongs to
+                    let overallPosition = currentPosition % totalCapacity
+                    let lineIndex = overallPosition / displayWidth
+                    let positionInLine = overallPosition % displayWidth
+                    
+                    // Update the lines
+                    var newLines = animatedLines
+                    
+                    if positionInLine == 0 {
+                        // Need to shift lines upward when starting a new line
+                        if lineIndex == 0 {
+                            // All lines need to shift up
+                            newLines[0] = newLines[1]
+                            newLines[1] = newLines[2]
+                            newLines[2] = String(repeating: " ", count: displayWidth)
+                        }
                     }
-                    // Add new character at the end
-                    animatedText.append(character)
+                    
+                    // Determine which line to modify
+                    let targetLineIndex = min(lineIndex, numberOfLines - 1)
+                    
+                    // Modify the corresponding line
+                    if positionInLine == 0 {
+                        // Start a new character at the beginning of the line
+                        var newLine = newLines[targetLineIndex]
+                        if newLine.count > 0 {
+                            newLine.removeFirst()
+                        }
+                        newLine.append(character)
+                        newLines[targetLineIndex] = newLine
+                    } else {
+                        // Replace the character at the specific position
+                        var newLine = newLines[targetLineIndex]
+                        let index = newLine.index(newLine.startIndex, offsetBy: positionInLine)
+                        if positionInLine < newLine.count {
+                            newLine.remove(at: index)
+                            newLine.insert(character, at: index)
+                        } else if positionInLine == newLine.count {
+                            newLine.append(character)
+                        }
+                        newLines[targetLineIndex] = newLine
+                    }
+                    
+                    animatedLines = newLines
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     
-                    // Move to next character
                     currentPosition += 1
                     scheduleNextCharacter()
                 }
             } else if !isPaused {
                 // Finished typing all characters, restart after a pause
-                main.asyncAfter(deadline: .now() + 1.5) {
+                main.asyncAfter(deadline: .now() + 2.0) {
                     if !isPaused {
                         resetAndRestart()
                     }
@@ -108,18 +148,13 @@ struct SlidingAnimationView: View {
             }
         }
         
-        // Start or continue the animation
         scheduleNextCharacter()
     }
     
     func resetAndRestart() {
-        // Reset position
         currentPosition = 0
+        animatedLines = Array(repeating: String(repeating: " ", count: displayWidth), count: numberOfLines)
         
-        // Reset to empty (spaces)
-        animatedText = String(repeating: " ", count: displayLength)
-        
-        // Wait a moment before restarting
         if !isPaused {
             main.asyncAfter(deadline: .now() + 0.8) {
                 if !isPaused {
@@ -133,7 +168,9 @@ struct SlidingAnimationView: View {
 // Example usage
 struct ContentView: View {
     var body: some View {
-        SlidingAnimationView(textToType: "Welcome to my SwiftUI typing animation with pause and continue functionality!", displayLength: 15)
-            .padding()
+        MultilineSlidingAnimationView(
+            textToType: "Welcome to my SwiftUI multi-line typing animation! This text will smoothly flow across three lines, creating a continuous stream of characters that demonstrates how to handle text overflow in a visually appealing way.",
+            displayWidth: 30
+        )
     }
 }
