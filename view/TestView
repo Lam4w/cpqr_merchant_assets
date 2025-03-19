@@ -4,7 +4,11 @@ struct SlidingAnimationView: View {
     let textToType: String
     let displayLength: Int
     @State private var animatedText: String
+    @State private var isPaused: Bool = false
     private let main: DispatchQueue
+    
+    // For keeping track of animation state when paused
+    @State private var currentPosition: Int = 0
     
     init(textToType: String, displayLength: Int) {
         self.textToType = textToType
@@ -16,23 +20,72 @@ struct SlidingAnimationView: View {
     }
     
     var body: some View {
-        Text(animatedText)
-            .font(.title)
-            .frame(width: CGFloat(displayLength) * 15) // Approximate width based on character count
-            .onAppear {
-                animateText()
+        VStack {
+            Text(animatedText)
+                .font(.title)
+                .frame(width: CGFloat(displayLength) * 15) // Approximate width based on character count
+                .padding()
+                .background(Color.gray.opacity(0.2))
+                .cornerRadius(8)
+                .onAppear {
+                    animateText()
+                }
+            
+            HStack(spacing: 20) {
+                Button(action: {
+                    togglePause()
+                }) {
+                    Text(isPaused ? "Continue" : "Pause")
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(isPaused ? Color.green : Color.red)
+                        .cornerRadius(8)
+                }
+                
+                Button(action: {
+                    resetAndRestart()
+                }) {
+                    Text("Reset")
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 10)
+                        .background(Color.blue)
+                        .cornerRadius(8)
+                }
             }
+            .padding(.top, 20)
+        }
+    }
+    
+    func togglePause() {
+        isPaused.toggle()
+        
+        if !isPaused {
+            // Continue from where we left off
+            continueAnimation()
+        }
     }
     
     func animateText() {
-        var currentPosition = 0
+        // Reset position when starting fresh
+        currentPosition = 0
+        continueAnimation()
+    }
+    
+    func continueAnimation() {
         let totalLength = textToType.count
         
         func scheduleNextCharacter() {
-            if currentPosition < totalLength {
+            if currentPosition < totalLength && !isPaused {
                 let character = textToType[textToType.index(textToType.startIndex, offsetBy: currentPosition)]
                 
                 main.asyncAfter(deadline: .now() + 0.2) {
+                    // Check again if we're paused after the delay
+                    if isPaused {
+                        return
+                    }
+                    
                     if animatedText.count >= displayLength {
                         // Remove first character
                         animatedText.removeFirst()
@@ -45,25 +98,34 @@ struct SlidingAnimationView: View {
                     currentPosition += 1
                     scheduleNextCharacter()
                 }
-            } else {
+            } else if !isPaused {
                 // Finished typing all characters, restart after a pause
                 main.asyncAfter(deadline: .now() + 1.5) {
-                    resetAndRestart()
+                    if !isPaused {
+                        resetAndRestart()
+                    }
                 }
             }
         }
         
-        // Start the animation
+        // Start or continue the animation
         scheduleNextCharacter()
     }
     
     func resetAndRestart() {
+        // Reset position
+        currentPosition = 0
+        
         // Reset to empty (spaces)
         animatedText = String(repeating: " ", count: displayLength)
         
         // Wait a moment before restarting
-        main.asyncAfter(deadline: .now() + 0.8) {
-            animateText()
+        if !isPaused {
+            main.asyncAfter(deadline: .now() + 0.8) {
+                if !isPaused {
+                    animateText()
+                }
+            }
         }
     }
 }
@@ -71,7 +133,7 @@ struct SlidingAnimationView: View {
 // Example usage
 struct ContentView: View {
     var body: some View {
-        SlidingAnimationView(textToType: "Welcome to my SwiftUI typing animation!", displayLength: 12)
+        SlidingAnimationView(textToType: "Welcome to my SwiftUI typing animation with pause and continue functionality!", displayLength: 15)
             .padding()
     }
 }
