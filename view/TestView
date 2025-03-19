@@ -1,6 +1,6 @@
 import SwiftUI
 
-struct MultilineSlidingAnimationView: View {
+struct ContinuousScrollingTextView: View {
     let textToType: String
     let displayWidth: Int
     let numberOfLines: Int = 3
@@ -23,7 +23,7 @@ struct MultilineSlidingAnimationView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             // Display the three lines
-            ForEach(0..<3, id: \.self) { index in
+            ForEach(0..<numberOfLines, id: \.self) { index in
                 Text(animatedLines[index])
                     .font(.system(size: 18, design: .monospaced))
                     .padding(4)
@@ -78,72 +78,50 @@ struct MultilineSlidingAnimationView: View {
     
     func continueAnimation() {
         let totalLength = textToType.count
-        let totalCapacity = displayWidth * numberOfLines
         
         func scheduleNextCharacter() {
-            if currentPosition < totalLength && !isPaused {
-                let character = textToType[textToType.index(textToType.startIndex, offsetBy: currentPosition)]
+            if !isPaused {
+                // Get next character (loop through text if needed)
+                let effectivePosition = currentPosition % totalLength
+                let character = textToType[textToType.index(textToType.startIndex, offsetBy: effectivePosition)]
                 
                 main.asyncAfter(deadline: .now() + 0.1) {
                     if isPaused {
                         return
                     }
                     
-                    // Calculate which line and position this character belongs to
-                    let overallPosition = currentPosition % totalCapacity
-                    let lineIndex = overallPosition / displayWidth
-                    let positionInLine = overallPosition % displayWidth
-                    
-                    // Update the lines
+                    // Shift characters up
                     var newLines = animatedLines
                     
-                    if positionInLine == 0 {
-                        // Need to shift lines upward when starting a new line
-                        if lineIndex == 0 {
-                            // All lines need to shift up
-                            newLines[0] = newLines[1]
-                            newLines[1] = newLines[2]
-                            newLines[2] = String(repeating: " ", count: displayWidth)
+                    // Remove first character from top line
+                    if !newLines[0].isEmpty {
+                        newLines[0].removeFirst()
+                        newLines[0].append(" ")
+                    }
+                    
+                    // Shift characters between lines
+                    for i in 0..<(numberOfLines-1) {
+                        if !newLines[i+1].isEmpty && !newLines[i].isEmpty {
+                            let firstCharOfNextLine = newLines[i+1].first!
+                            newLines[i+1].removeFirst()
+                            newLines[i+1].append(" ")
+                            
+                            newLines[i].removeFirst()
+                            newLines[i].append(firstCharOfNextLine)
                         }
                     }
                     
-                    // Determine which line to modify
-                    let targetLineIndex = min(lineIndex, numberOfLines - 1)
-                    
-                    // Modify the corresponding line
-                    if positionInLine == 0 {
-                        // Start a new character at the beginning of the line
-                        var newLine = newLines[targetLineIndex]
-                        if newLine.count > 0 {
-                            newLine.removeFirst()
-                        }
-                        newLine.append(character)
-                        newLines[targetLineIndex] = newLine
-                    } else {
-                        // Replace the character at the specific position
-                        var newLine = newLines[targetLineIndex]
-                        let index = newLine.index(newLine.startIndex, offsetBy: positionInLine)
-                        if positionInLine < newLine.count {
-                            newLine.remove(at: index)
-                            newLine.insert(character, at: index)
-                        } else if positionInLine == newLine.count {
-                            newLine.append(character)
-                        }
-                        newLines[targetLineIndex] = newLine
+                    // Add new character to the last line
+                    if !newLines[numberOfLines-1].isEmpty {
+                        newLines[numberOfLines-1].removeFirst()
                     }
+                    newLines[numberOfLines-1].append(character)
                     
                     animatedLines = newLines
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     
                     currentPosition += 1
                     scheduleNextCharacter()
-                }
-            } else if !isPaused {
-                // Finished typing all characters, restart after a pause
-                main.asyncAfter(deadline: .now() + 2.0) {
-                    if !isPaused {
-                        resetAndRestart()
-                    }
                 }
             }
         }
@@ -168,8 +146,8 @@ struct MultilineSlidingAnimationView: View {
 // Example usage
 struct ContentView: View {
     var body: some View {
-        MultilineSlidingAnimationView(
-            textToType: "Welcome to my SwiftUI multi-line typing animation! This text will smoothly flow across three lines, creating a continuous stream of characters that demonstrates how to handle text overflow in a visually appealing way.",
+        ContinuousScrollingTextView(
+            textToType: "Welcome to my SwiftUI continuous scrolling text animation! This text will smoothly flow across three lines, with characters disappearing from the top and new ones appearing at the bottom, creating a continuous stream of characters that never stops. This is perfect for displaying long messages in a limited space.",
             displayWidth: 30
         )
     }
