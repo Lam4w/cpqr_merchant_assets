@@ -1,67 +1,53 @@
-private struct BlurScroll: ViewModifier {
-    
-    let blur: CGFloat
-    let coordinateSpaceName = "scroll"
-    
-    @State private var scrollPosition: CGPoint = .zero
-    
-    func body(content: Content) -> some View {
-        
-        let gradient = LinearGradient(stops: [
-            .init(color: .white, location: 0.10),
-            .init(color: .clear, location: 0.25)],
-                                      startPoint: .bottom,
-                                      endPoint: .top)
-        
-        let invertedGradient = LinearGradient(stops: [
-            .init(color: .clear, location: 0.10),
-            .init(color: .white, location: 0.25)],
-                                              startPoint: .bottom,
-                                              endPoint: .top)
-        
-        GeometryReader { topGeo in
-            ScrollView {
-                ZStack(alignment: .top) {
-                    content
-                        .mask(
-                            VStack {
-                                invertedGradient
-                                
-                                    .frame(height: topGeo.size.height, alignment: .top)
-                                    .offset(y:  -scrollPosition.y )
-                                Spacer()
-                            }
-                        )
-                    
-                    content
-                        .blur(radius: blur)
-                        .frame(height: topGeo.size.height, alignment: .top)
-                        .mask(gradient
-                            .frame(height: topGeo.size.height)
-                            .offset(y:  -scrollPosition.y )
-                        )
-                        .ignoresSafeArea()
-                }
-                .padding(.bottom, topGeo.size.height * 0.25)
-                .background(GeometryReader { geo in
-                    Color.clear
-                        .preference(key: ScrollOffsetPreferenceKey.self,
-                                    value: geo.frame(in: .named(coordinateSpaceName)).origin)
-                })
-                .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
-                    self.scrollPosition = value
+import SwiftUI
+struct TypingAnimationView: View {
+    let textToType: String
+    @State private var animatedText: String
+    private let main : DispatchQueue
+
+    init(textToType: String) {
+        self.textToType = textToType
+        self.animatedText = String(repeating: " ", count: textToType.count)
+        self.main = DispatchQueue.main
+    }
+
+    var body: some View {
+        Text(animatedText)
+            .font(.title)
+            .onAppear { animateText() }
+    }
+
+    func animateText() {
+        for (index, character) in textToType.enumerated() {
+            main.asyncAfter(deadline: .now() + Double(index) * 0.2) {
+                let sindex = animatedText.index(animatedText.startIndex, offsetBy: index)
+                animatedText.remove(at: sindex)
+                animatedText.insert(character, at: sindex)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                if index == textToType.count - 1 {
+                    main.asyncAfter(deadline: .now() + 0.8) {
+                        retractText()
+                    }
                 }
             }
-            .coordinateSpace(name: coordinateSpaceName)
         }
-        .ignoresSafeArea()
     }
-}
-
-//MARK: PreferenceKey
-private struct ScrollOffsetPreferenceKey: PreferenceKey {
     
-    static var defaultValue: CGPoint = .zero
-    
-    static func reduce(value: inout CGPoint, nextValue: () -> CGPoint) { }
+    func retractText() {
+        for (index, _) in textToType.enumerated() {
+            let time = index == textToType.count - 1 ? 0.218 : 0.2
+            main.asyncAfter(deadline: .now() + Double(index) * time) {
+                let sindex = animatedText.index(animatedText.startIndex, offsetBy: textToType.count - 1 - index)
+                animatedText.remove(at: sindex)
+                animatedText.insert(contentsOf: " ", at: sindex)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                // Check if it's the last character
+                if index == textToType.count - 1 {
+                    // If it's the last character, restart the typing animation
+                    main.asyncAfter(deadline: .now() + 0.8) {
+                        animateText()
+                    }
+                }
+            }
+        }
+    }
 }
