@@ -1,21 +1,39 @@
 import SwiftUI
+
 struct TypingAnimationView: View {
     let textToType: String
     @State private var animatedText: String
-    private let main : DispatchQueue
-
+    private let main: DispatchQueue
+    // ScrollView reference for scrolling
+    @State private var scrollViewProxy: ScrollViewProxy? = nil
+    // ID for the text view to scroll to
+    private let bottomID = "bottomID"
+    
     init(textToType: String) {
         self.textToType = textToType
         self.animatedText = String(repeating: " ", count: textToType.count)
         self.main = DispatchQueue.main
     }
-
+    
     var body: some View {
-        Text(animatedText)
-            .font(.title)
-            .onAppear { animateText() }
+        VStack {
+            ScrollViewReader { proxy in
+                ScrollView {
+                    Text(animatedText)
+                        .font(.title)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding()
+                        .id(bottomID) // Set ID for scrolling target
+                }
+                .frame(height: 200) // Fixed height for the ScrollView
+                .onAppear {
+                    scrollViewProxy = proxy
+                    animateText()
+                }
+            }
+        }
     }
-
+    
     func animateText() {
         for (index, character) in textToType.enumerated() {
             main.asyncAfter(deadline: .now() + Double(index) * 0.2) {
@@ -23,6 +41,12 @@ struct TypingAnimationView: View {
                 animatedText.remove(at: sindex)
                 animatedText.insert(character, at: sindex)
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                
+                // Scroll to bottom after each character
+                withAnimation {
+                    scrollViewProxy?.scrollTo(bottomID, anchor: .bottom)
+                }
+                
                 if index == textToType.count - 1 {
                     main.asyncAfter(deadline: .now() + 0.8) {
                         retractText()
@@ -40,6 +64,12 @@ struct TypingAnimationView: View {
                 animatedText.remove(at: sindex)
                 animatedText.insert(contentsOf: " ", at: sindex)
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                
+                // Scroll to bottom after each character removal
+                withAnimation {
+                    scrollViewProxy?.scrollTo(bottomID, anchor: .bottom)
+                }
+                
                 // Check if it's the last character
                 if index == textToType.count - 1 {
                     // If it's the last character, restart the typing animation
@@ -49,5 +79,12 @@ struct TypingAnimationView: View {
                 }
             }
         }
+    }
+}
+
+// Preview
+struct TypingAnimationView_Previews: PreviewProvider {
+    static var previews: some View {
+        TypingAnimationView(textToType: "Hello, this is a typing animation example with automatic scrolling as the text is being typed.")
     }
 }
