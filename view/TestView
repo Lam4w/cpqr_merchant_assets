@@ -1,27 +1,85 @@
-private func fadeMask(leftFade: CGFloat, rightFade: CGFloat) -> some View {
-        HStack(spacing: 0) {
-            Rectangle().frame(width: 2).opacity(0)
-            
-            LinearGradient(
-                gradient: Gradient(colors: [Color.black.opacity(0), Color.black]),
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-            .frame(width: leftFade)
-            
-            LinearGradient(
-                gradient: Gradient(colors: [Color.black, Color.black]),
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-            
-            LinearGradient(
-                gradient: Gradient(colors: [Color.black, Color.black.opacity(0)]),
-                startPoint: .leading,
-                endPoint: .trailing
-            )
-            .frame(width: rightFade)
-            
-            Rectangle().frame(width: 2).opacity(0)
+import SwiftUI
+
+struct TypingAnimationWrapper<Content: View>: View {
+    let height: CGFloat
+    let content: Content
+    
+    init(height: CGFloat, @ViewBuilder content: () -> Content) {
+        self.height = height
+        self.content = content()
+    }
+    
+    var body: some View {
+        ZStack(alignment: .topLeading) {
+            content
+        }
+        .frame(height: height, alignment: .topLeading)
+        .clipped()
+    }
+}
+
+struct TypingAnimationView: View {
+    let textToType: String
+    @State private var animatedText: String
+    private let main: DispatchQueue
+    
+    init(textToType: String) {
+        self.textToType = textToType
+        self.animatedText = String(repeating: " ", count: textToType.count)
+        self.main = DispatchQueue.main
+    }
+    
+    var body: some View {
+        Text(animatedText)
+            .font(.title)
+            .onAppear {
+                animateText()
+            }
+    }
+    
+    func animateText() {
+        for (index, character) in textToType.enumerated() {
+            main.asyncAfter(deadline: .now() + Double(index) * 0.2) {
+                let sindex = animatedText.index(animatedText.startIndex, offsetBy: index)
+                animatedText.remove(at: sindex)
+                animatedText.insert(character, at: sindex)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                
+                if index == textToType.count - 1 {
+                    main.asyncAfter(deadline: .now() + 0.8) {
+                        retractText()
+                    }
+                }
+            }
         }
     }
+    
+    func retractText() {
+        for (index, _) in textToType.enumerated() {
+            let time = index == textToType.count - 1 ? 0.218 : 0.2
+            main.asyncAfter(deadline: .now() + Double(index) * time) {
+                let sindex = animatedText.index(animatedText.startIndex, offsetBy: textToType.count - 1 - index)
+                animatedText.remove(at: sindex)
+                animatedText.insert(contentsOf: " ", at: sindex)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                
+                // Check if it's the last character
+                if index == textToType.count - 1 {
+                    // If it's the last character, restart the typing animation
+                    main.asyncAfter(deadline: .now() + 0.8) {
+                        animateText()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Example usage:
+struct ContentView: View {
+    var body: some View {
+        TypingAnimationWrapper(height: 50) {
+            TypingAnimationView(textToType: "This is a long text that might exceed the height limit we've set. It will be clipped if it's too long.")
+        }
+    }
+}
