@@ -1,129 +1,67 @@
-import SwiftUI
-
-struct TypingAnimationWrapper: View {
-    let textToType: String
-    let maxHeight: CGFloat
-    @State private var lines: [String] = []
-    @State private var currentLine: String = ""
-    @State private var currentIndex: Int = 0
-    @State private var isTyping: Bool = true
-    private let main: DispatchQueue
-    private let typingDelay: Double = 0.2
-    private let retractDelay: Double = 0.2
-    private let pauseDelay: Double = 0.8
+private struct BlurScroll: ViewModifier {
     
-    init(textToType: String, maxHeight: CGFloat = 200) {
-        self.textToType = textToType
-        self.maxHeight = maxHeight
-        self.main = DispatchQueue.main
-    }
+    let blur: CGFloat
+    let coordinateSpaceName = "scroll"
     
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 4) {
-                    ForEach(lines.indices, id: \.self) { index in
-                        Text(lines[index])
-                            .font(.title)
-                    }
-                    Text(currentLine)
-                        .font(.title)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .frame(maxHeight: maxHeight)
-            .clipped() // This will hide any content that goes beyond the boundaries
-        }
-        .padding()
-        .onAppear {
-            animateText()
-        }
-    }
+    @State private var scrollPosition: CGPoint = .zero
     
-    func animateText() {
-        isTyping = true
-        currentLine = ""
+    func body(content: Content) -> some View {
         
-        for index in 0..<textToType.count {
-            main.asyncAfter(deadline: .now() + Double(index) * typingDelay) {
-                if index < textToType.count {
-                    let character = textToType[textToType.index(textToType.startIndex, offsetBy: index)]
-                    currentLine.append(character)
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        let gradient = LinearGradient(stops: [
+            .init(color: .white, location: 0.10),
+            .init(color: .clear, location: 0.25)],
+                                      startPoint: .bottom,
+                                      endPoint: .top)
+        
+        let invertedGradient = LinearGradient(stops: [
+            .init(color: .clear, location: 0.10),
+            .init(color: .white, location: 0.25)],
+                                              startPoint: .bottom,
+                                              endPoint: .top)
+        
+        GeometryReader { topGeo in
+            ScrollView {
+                ZStack(alignment: .top) {
+                    content
+                        .mask(
+                            VStack {
+                                invertedGradient
+                                
+                                    .frame(height: topGeo.size.height, alignment: .top)
+                                    .offset(y:  -scrollPosition.y )
+                                Spacer()
+                            }
+                        )
                     
-                    // Check if we need to start a new line
-                    if character == "\n" {
-                        lines.append(currentLine.trimmingCharacters(in: .newlines))
-                        currentLine = ""
-                    }
+                    content
+                        .blur(radius: blur)
+                        .frame(height: topGeo.size.height, alignment: .top)
+                        .mask(gradient
+                            .frame(height: topGeo.size.height)
+                            .offset(y:  -scrollPosition.y )
+                        )
+                        .ignoresSafeArea()
                 }
-                
-                if index == textToType.count - 1 {
-                    // Add the last line if it's not empty
-                    if !currentLine.isEmpty {
-                        lines.append(currentLine)
-                        currentLine = ""
-                    }
-                    
-                    main.asyncAfter(deadline: .now() + pauseDelay) {
-                        retractText()
-                    }
-                }
-            }
-        }
-    }
-    
-    func retractText() {
-        isTyping = false
-        
-        if lines.isEmpty {
-            // Nothing to retract, restart typing
-            main.asyncAfter(deadline: .now() + pauseDelay) {
-                animateText()
-            }
-            return
-        }
-        
-        // Get the last line
-        var lastLine = lines.removeLast()
-        
-        // Retract the last line character by character
-        for index in 0..<lastLine.count {
-            main.asyncAfter(deadline: .now() + Double(index) * retractDelay) {
-                if !lastLine.isEmpty {
-                    lastLine.removeLast()
-                    currentLine = lastLine
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                }
-                
-                if index == lastLine.count - 1 || lastLine.isEmpty {
-                    main.asyncAfter(deadline: .now() + pauseDelay) {
-                        // If all lines are empty, restart typing
-                        if lines.isEmpty && currentLine.isEmpty {
-                            animateText()
-                        } else {
-                            retractText()
-                        }
-                    }
+                .padding(.bottom, topGeo.size.height * 0.25)
+                .background(GeometryReader { geo in
+                    Color.clear
+                        .preference(key: ScrollOffsetPreferenceKey.self,
+                                    value: geo.frame(in: .named(coordinateSpaceName)).origin)
+                })
+                .onPreferenceChange(ScrollOffsetPreferenceKey.self) { value in
+                    self.scrollPosition = value
                 }
             }
+            .coordinateSpace(name: coordinateSpaceName)
         }
+        .ignoresSafeArea()
     }
 }
 
-// Extension to make it easier to use the wrapper
-extension String {
-    subscript(offset: Int) -> Character {
-        self[index(startIndex, offsetBy: offset)]
-    }
-}
-
-// Example usage:
-struct ContentView: View {
-    let textToType = "Hello, World!\nThis is a typing animation.\nWith multiple lines of text.\nIt will continuously type and retract text while respecting the height limit.\nText that exceeds the limit will be pushed upward and hidden."
+//MARK: PreferenceKey
+private struct ScrollOffsetPreferenceKey: PreferenceKey {
     
-    var body: some View {
-        TypingAnimationWrapper(textToType: textToType, maxHeight: 150)
-            .padding()
-    }
+    static var defaultValue: CGPoint = .zero
+    
+    static func reduce(value: inout CGPoint, nextValue: () -> CGPoint) { }
 }
